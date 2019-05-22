@@ -1,4 +1,4 @@
-import { InitializeParams, InitializeResult } from 'vscode-languageserver-protocol';
+import { InitializeParams, InitializeResult, DidChangeWorkspaceFoldersParams} from 'vscode-languageserver-protocol';
 
 import { Logger, PrefixingLogger } from './logger';
 import { execSync } from 'child_process';
@@ -7,9 +7,10 @@ import * as path from 'path';
 
 export interface IServerOptions {
     logger: Logger;
-    ctagsPath?: string
+    ctagsPath?: string;
 }
 
+var uri2path = require('file-uri-to-path');
 export class LspServer {
 
     protected initializeParams: InitializeParams;
@@ -25,11 +26,39 @@ export class LspServer {
         this.logger.log('initialize', params);
         this.initializeParams = params;
 
-        var uri2path = require('file-uri-to-path');
         const rootPath = uri2path(params.rootUri);
+        this.runCtags(rootPath);
+
+        this.initializeResult = {
+            capabilities: {
+                definitionProvider: true,
+                documentSymbolProvider: true,
+                hoverProvider: true,
+            },
+        };
+        this.logger.log('onInitialize result', this.initializeResult);
+        return this.initializeResult;
+    }
+
+    didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
+        const rootPath = uri2path(params.event.added[0].uri);
+        this.runCtags(rootPath);
+    }
+
+    private runCtags(rootPath: string) {
+        try {
+            if (existsSync(path.resolve(rootPath, this.tagFileName))) {
+                this.logger.log('Tag file exists, continue...');
+            } else {
+                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);  
+            }
+        } catch(err) {
+            this.logger.error(err);
+        }
+
         const ctagsPath = this.findCtagsPath();
         try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS`, { cwd: rootPath });
+            execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath });
         } catch (err) {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
             this.logger.error(`${err.stderr}`);
@@ -44,16 +73,6 @@ export class LspServer {
         } catch(err) {
             this.logger.error(err);
         }
-
-        this.initializeResult = {
-            capabilities: {
-                definitionProvider: true,
-                documentSymbolProvider: true,
-                hoverProvider: true,
-            },
-        };
-        this.logger.log('onInitialize result', this.initializeResult);
-        return this.initializeResult;
     }
 
     protected findCtagsPath(): string {

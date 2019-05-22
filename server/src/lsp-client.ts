@@ -1,4 +1,5 @@
 import * as lsp from 'vscode-languageserver';
+import { MessageConnection } from 'vscode-jsonrpc';
 
 export interface LspClient {
     showMessage(args: lsp.ShowMessageParams): void;
@@ -6,7 +7,7 @@ export interface LspClient {
 }
 
 export class LspClientImpl implements LspClient {
-    constructor(protected connection: lsp.IConnection) {
+    constructor(protected connection: MessageConnection) {
     }
 
     showMessage(args: lsp.ShowMessageParams): void {
