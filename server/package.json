@@ -18,7 +18,11 @@
         "commander": "^2.11.0",
         "tempy": "^0.2.1",
         "vscode-languageserver": "^4.4.0",
-        "file-uri-to-path": "1.0.0"
+        "file-uri-to-path": "^1.0.0",
+        "file-url": "^3.0.0",
+        "nuclide-prebuilt-libs": "^0.5.7",
+        "line-column": "^1.0.2",
+        "@elastic/lsp-extension": "^0.1.1"
     },
     "devDependencies": {
         "@types/tempy": "^0.1.0"
