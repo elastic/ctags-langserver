@@ -17,7 +17,8 @@
     "dependencies": {
         "commander": "^2.11.0",
         "tempy": "^0.2.1",
-        "vscode-languageserver": "^4.4.0"
+        "vscode-languageserver": "^4.4.0",
+        "file-uri-to-path": "1.0.0"
     },
     "devDependencies": {
         "@types/tempy": "^0.1.0"
