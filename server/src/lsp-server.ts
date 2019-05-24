@@ -46,16 +46,6 @@ export class LspServer {
     }
 
     private runCtags(rootPath: string) {
-        try {
-            if (existsSync(path.resolve(rootPath, this.tagFileName))) {
-                this.logger.log('Tag file exists, continue...');
-            } else {
-                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);  
-            }
-        } catch(err) {
-            this.logger.error(err);
-        }
-
         const ctagsPath = this.findCtagsPath();
         try {
             execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath });
@@ -65,9 +55,7 @@ export class LspServer {
         }
         
         try {
-            if (existsSync(path.resolve(rootPath, this.tagFileName))) {
-                // continue
-            } else {
+            if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
                 this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);  
             }
         } catch(err) {
