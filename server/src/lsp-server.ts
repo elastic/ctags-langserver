@@ -51,6 +51,7 @@ export class LspServer {
     }
 
     async documentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
+        this.logger.log('documentSymbol', params);
         const filePath = uri2path(params.textDocument.uri);
         const relativePath = path.relative(this.rootPath, filePath);
         const stream = ctags.createReadStream(path.resolve(this.rootPath, this.tagFileName));
@@ -109,6 +110,7 @@ export class LspServer {
     }
 
     async hover(params: TextDocumentPositionParams): Promise<Hover> {
+        this.logger.log('hover', params);
         const fileName: string = uri2path(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line+1, params.position.character+1);
@@ -127,7 +129,8 @@ export class LspServer {
         });
     }
 
-    async definition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
+    async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
+        this.logger.log('edefinition', params);
         const fileName: string = uri2path(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line+1, params.position.character+1);

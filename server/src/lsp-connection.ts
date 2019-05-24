@@ -66,7 +66,7 @@ export function createLspConnection(options: IServerOptions) {
         });
 
         clientConnection.onRequest('textDocument/edefinition', async (params: TextDocumentPositionParams) => {
-            return await lspServer.definition(params);
+            return await lspServer.eDefinition(params);
         });
         
         clientConnection.listen();
