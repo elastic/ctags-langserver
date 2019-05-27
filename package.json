@@ -1,12 +1,18 @@
 {
 	"private": true,
 	"scripts": {
-        "compile": "tsc -b"
+		"compile": "tsc -b",
+		"tslint": "tslint -c tslint.json -p .",
+		"test": "jest"
 	},
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
 		"@types/node": "^8.0.0",
-		"tslint": "^5.11.0"
+		"@types/jest": "24.0.13",
+		"tslint": "^5.16.0",
+		"typescript": "^3.4.5",
+		"jest": "^24.8.0",
+		"ts-jest": "24.0.2"
 	},
 	"workspaces": [
         "server"

@@ -1,14 +1,14 @@
 export function getOffsetOfLineAndCharacter(sourceFile: string, line: number, character: number): number {
-    var lineColumn = require("line-column");
+    let lineColumn = require("line-column");
     return lineColumn(sourceFile).toIndex(line, character);
 }
 
 export function codeSelect(source: string, offset: number): string {
     let start = offset;
     let end = offset;
-    while (accept(source.charCodeAt(start--)));
-    while (accept(source.charCodeAt(end++)));
-    return source.substring(start+2, end-1);
+    while (accept(source.charCodeAt(start--))) {; }
+    while (accept(source.charCodeAt(end++))) {; }
+    return source.substring(start + 2, end - 1);
 }
 
 function accept(charCode: number): boolean {

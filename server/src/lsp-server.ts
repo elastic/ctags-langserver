@@ -1,4 +1,6 @@
-import { InitializeParams, InitializeResult, DidChangeWorkspaceFoldersParams, DocumentSymbolParams, SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Definition, Location} from 'vscode-languageserver-protocol';
+import { InitializeParams, InitializeResult,
+    DidChangeWorkspaceFoldersParams, DocumentSymbolParams,
+    SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location} from 'vscode-languageserver-protocol';
 import { SymbolLocator } from '@elastic/lsp-extension';
 
 import { Logger, PrefixingLogger } from './logger';
@@ -60,11 +62,12 @@ export class LspServer {
             stream.on('data', (tags) => {
                 const definitions = tags.filter(tag => tag.file === relativePath);
                 for (let def of definitions) {
-                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array, Range.create(Position.create(def.lineNumber-1, 0), Position.create(def.lineNumber-1, 0)), params.textDocument.uri, relativePath);
-                    if (def.fields != undefined) {
+                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array,
+                        Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
+                    if (def.fields !== undefined) {
                         if (def.fields.hasOwnProperty('struct')) {
                             symbolInformation.containerName = def.fields.struct;
-                        } else if (def.fields != undefined && def.fields.hasOwnProperty('class')) {
+                        } else if (def.fields !== undefined && def.fields.hasOwnProperty('class')) {
                             symbolInformation.containerName = def.fields.class;
                         }  else if (def.fields.hasOwnProperty('interface')) {
                             symbolInformation.containerName = def.fields.interface;
@@ -113,7 +116,7 @@ export class LspServer {
         this.logger.log('hover', params);
         const fileName: string = uri2path(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
-        const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line+1, params.position.character+1);
+        const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         return new Promise<Hover>(resolve => {
             ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
@@ -133,14 +136,14 @@ export class LspServer {
         this.logger.log('edefinition', params);
         const fileName: string = uri2path(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
-        const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line+1, params.position.character+1);
+        const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         return new Promise<SymbolLocator>(resolve => {
             ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
                     const destURI = fileUrl(path.resolve(this.rootPath, tag.file));
                     resolve({
-                        location: Location.create(destURI, Range.create(Position.create(tag.lineNumber-1, 0), Position.create(tag.lineNumber-1, 0)))
+                        location: Location.create(destURI, Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
                     });
                 }
                 resolve(undefined);
@@ -156,12 +159,12 @@ export class LspServer {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
             this.logger.error(`${err.stderr}`);
         }
-        
+
         try {
             if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
-                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);  
+                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);
             }
-        } catch(err) {
+        } catch (err) {
             this.logger.error(err);
         }
     }
