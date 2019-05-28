@@ -119,6 +119,11 @@ export class LspServer {
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         return new Promise<Hover>(resolve => {
+            if (symbol === '') {
+                resolve({
+                    contents: '' as MarkedString
+                });
+            }
             ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
                     resolve({
@@ -139,6 +144,9 @@ export class LspServer {
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         return new Promise<SymbolLocator>(resolve => {
+            if (symbol === '') {
+                resolve(undefined);
+            }
             ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
                     const destURI = fileUrl(path.resolve(this.rootPath, tag.file));
