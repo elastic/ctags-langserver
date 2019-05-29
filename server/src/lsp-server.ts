@@ -100,6 +100,9 @@ export class LspServer {
                         case 'enum':
                             symbolInformation.kind = SymbolKind.Enum;
                             break;
+                        case 'member':
+                            symbolInformation.kind = SymbolKind.Method;
+                            break;
                         default:
                             break;
                     }
