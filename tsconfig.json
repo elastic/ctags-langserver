@@ -1,6 +1,10 @@
 {
-    "files": [],
-    "references": [
-        { "path": "server" }
+    "extends": "./tsconfig.settings.json",
+    "compilerOptions": {
+        "outDir": "lib",
+        "rootDir": "src"
+    },
+    "include": [
+        "src"
     ]
 }
