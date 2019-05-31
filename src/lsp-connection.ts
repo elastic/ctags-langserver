@@ -8,9 +8,10 @@ import {
   } from 'vscode-jsonrpc';
 
 import { LspServer } from './lsp-server';
-import { InitializeParams, DidChangeWorkspaceFoldersParams } from 'vscode-languageserver';
+import { InitializeParams, DidChangeWorkspaceFoldersParams, DocumentSymbolParams, TextDocumentPositionParams } from 'vscode-languageserver';
 import { ConsoleLogger, LspClientLogger } from './logger';
 import { LspClientImpl } from './lsp-client';
+import { FullParams } from '@elastic/lsp-extension';
 
 export interface IServerOptions {
     ctagsPath: string;
@@ -50,8 +51,23 @@ export function createLspConnection(options: IServerOptions) {
 
         clientConnection.onRequest('workspace/didChangeWorkspaceFolders', (params: DidChangeWorkspaceFoldersParams) => {
             lspServer.didChangeWorkspaceFolders(params);
-        })
-        
+        });
+
+        clientConnection.onRequest('textDocument/documentSymbol', async (params: DocumentSymbolParams) => {
+            return await lspServer.documentSymbol(params);
+        });
+
+        // clientConnection.onRequest('textDocument/full', async (params: FullParams) => {
+        //     return await lspServer.documentSymbol(params);
+        // });
+
+        clientConnection.onRequest('textDocument/hover', async (params: TextDocumentPositionParams) => {
+            return await lspServer.hover(params);
+        });
+
+        clientConnection.onRequest('textDocument/edefinition', async (params: TextDocumentPositionParams) => {
+            return await lspServer.eDefinition(params);
+        });
         clientConnection.listen();
     });
 
