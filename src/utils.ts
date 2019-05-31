@@ -1,5 +1,7 @@
 import * as lineColumn from 'line-column';
 
+const WORD_CHAR: RegExp = /(\w)/;
+
 export function getOffsetOfLineAndCharacter(sourceFile: string, line: number, character: number): number {
     return lineColumn(sourceFile).toIndex(line, character);
 }
@@ -7,8 +9,8 @@ export function getOffsetOfLineAndCharacter(sourceFile: string, line: number, ch
 export function codeSelect(source: string, offset: number): string {
     let start = offset;
     let end = offset;
-    while (accept(source.charCodeAt(start--))) {; }
-    while (accept(source.charCodeAt(end++))) {; }
+    while (WORD_CHAR.test(source.charAt(start--))) {; }
+    while (WORD_CHAR.test(source.charAt(end++))) {; }
     return source.substring(start + 2, end - 1);
 }
 
@@ -28,12 +30,10 @@ export function bestIndexOfSymbol(wholeStr: string, symbol: string): number {
 
 export function cutLineText(origin: string): string {
     // /^${line text}$/;"
-    return origin.substring(2, origin.length-2);
+    return origin.substring(2, origin.length - 2);
 }
 
 function strictIndexOf(wholeStr: string, subStr: string): number {
-    let WORD_CHAR: RegExp = /(\w)/;
-
     let stricLeft: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(0));
     let strictRight: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(subStr.length - 1));
 
@@ -58,15 +58,4 @@ function strictIndexOf(wholeStr: string, subStr: string): number {
         return woff;
     } while (spos < wholeStr.length);
     return -1;
-}
-
-function accept(charCode: number): boolean {
-    if ((charCode > 47 && charCode < 58) || // 0-9
-        (charCode > 64 && charCode < 91) || // A-Z
-        (charCode > 96 && charCode < 123) || // a-z
-        (charCode === 95) || // _
-        (charCode === 36)) { // $
-            return true;
-        }
-    return false;
 }
