@@ -1,5 +1,6 @@
+import * as lineColumn from 'line-column';
+
 export function getOffsetOfLineAndCharacter(sourceFile: string, line: number, character: number): number {
-    let lineColumn = require("line-column");
     return lineColumn(sourceFile).toIndex(line, character);
 }
 

@@ -7,6 +7,8 @@ import { Logger, PrefixingLogger } from './logger';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import * as ctags from 'nuclide-prebuilt-libs/ctags';
 import { getOffsetOfLineAndCharacter, codeSelect } from './utils';
 
 export interface IServerOptions {
@@ -14,9 +16,6 @@ export interface IServerOptions {
     ctagsPath?: string;
 }
 
-const uri2path = require('file-uri-to-path');
-const fileUrl = require('file-url');
-const ctags = require('nuclide-prebuilt-libs/ctags');
 export class LspServer {
 
     protected initializeParams: InitializeParams;
@@ -33,7 +32,7 @@ export class LspServer {
         this.logger.log('initialize', params);
         this.initializeParams = params;
 
-        this.rootPath = uri2path(params.rootUri);
+        this.rootPath = fileURLToPath(params.rootUri!);
         this.runCtags(this.rootPath);
 
         this.initializeResult = {
@@ -48,13 +47,13 @@ export class LspServer {
     }
 
     didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
-        this.rootPath = uri2path(params.event.added[0].uri);
+        this.rootPath = fileURLToPath(params.event.added[0].uri);
         this.runCtags(this.rootPath);
     }
 
     async documentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
         this.logger.log('documentSymbol', params);
-        const filePath = uri2path(params.textDocument.uri);
+        const filePath = fileURLToPath(params.textDocument.uri);
         const relativePath = path.relative(this.rootPath, filePath);
         const stream = ctags.createReadStream(path.resolve(this.rootPath, this.tagFileName));
         return new Promise<SymbolInformation[]>(resolve => {
@@ -65,14 +64,16 @@ export class LspServer {
                     let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
                     if (def.fields !== undefined) {
-                        if (def.fields.hasOwnProperty('struct')) {
+                        if (def.fields.struct) {
                             symbolInformation.containerName = def.fields.struct;
-                        } else if (def.fields !== undefined && def.fields.hasOwnProperty('class')) {
+                        } else if (def.fields.class) {
                             symbolInformation.containerName = def.fields.class;
-                        }  else if (def.fields.hasOwnProperty('interface')) {
+                        }  else if (def.fields.interface) {
                             symbolInformation.containerName = def.fields.interface;
-                        } else if (def.fields.hasOwnProperty('function')) {
+                        } else if (def.fields.function) {
                             symbolInformation.containerName = def.fields.function;
+                        } else if (def.fields.enum) {
+                            symbolInformation.containerName = def.fields.enum;
                         }
                     }
                     switch (def.kind) {
@@ -100,6 +101,9 @@ export class LspServer {
                         case 'enum':
                             symbolInformation.kind = SymbolKind.Enum;
                             break;
+                        case 'enumerator':
+                            symbolInformation.kind = SymbolKind.EnumMember;
+                            break;
                         case 'member':
                             symbolInformation.kind = SymbolKind.Method;
                             break;
@@ -117,7 +121,7 @@ export class LspServer {
 
     async hover(params: TextDocumentPositionParams): Promise<Hover> {
         this.logger.log('hover', params);
-        const fileName: string = uri2path(params.textDocument.uri);
+        const fileName: string = fileURLToPath(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
@@ -142,7 +146,7 @@ export class LspServer {
 
     async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
         this.logger.log('edefinition', params);
-        const fileName: string = uri2path(params.textDocument.uri);
+        const fileName: string = fileURLToPath(params.textDocument.uri);
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
@@ -152,9 +156,9 @@ export class LspServer {
             }
             ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
-                    const destURI = fileUrl(path.resolve(this.rootPath, tag.file));
+                    const destURI = pathToFileURL(path.resolve(this.rootPath, tag.file));
                     resolve({
-                        location: Location.create(destURI, Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
+                        location: Location.create(destURI.toString(), Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
                     });
                 }
                 resolve(undefined);
