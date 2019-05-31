@@ -18,7 +18,7 @@ export function bestIndexOfSymbol(wholeStr: string, symbol: string): number {
     } else {
         let woff = strictIndexOf(wholeStr, symbol);
         if (woff >= 0) {
-          return woff;
+            return woff;
         } else {
           woff = wholeStr.indexOf(symbol);
           return woff;
@@ -27,37 +27,35 @@ export function bestIndexOfSymbol(wholeStr: string, symbol: string): number {
 }
 
 export function cutLineText(origin: string): string {
-  // /^${line text}$/;"
-  return origin.substring(2, origin.length-2);
+    // /^${line text}$/;"
+    return origin.substring(2, origin.length-2);
 }
 
 function strictIndexOf(wholeStr: string, subStr: string): number {
-    let WORD_CHAR: RegExp = new RegExp('\w');
+    let WORD_CHAR: RegExp = /(\w)/;
 
-     let stricLeft: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(0));
+    let stricLeft: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(0));
     let strictRight: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(subStr.length - 1));
 
-     let spos = 0;
+    let spos = 0;
     do {
-      let woff = wholeStr.indexOf(subStr, spos);
-      if (woff < 0) {
-        return -1;
-      }
-
-       spos = woff + 1;
-
-       if (stricLeft && woff > 0) {
-        if (WORD_CHAR.test(wholeStr.charAt(woff - 1))) {
-          continue;
+        let woff = wholeStr.indexOf(subStr, spos);
+        if (woff < 0) {
+            return -1;
         }
-      }
 
-       if (strictRight && (woff + subStr.length) < wholeStr.length) {
-        if (WORD_CHAR.test(wholeStr.charAt(woff + subStr.length))) {
-          continue;
+        spos = woff + 1;
+        if (stricLeft && woff > 0) {
+            if (WORD_CHAR.test(wholeStr.charAt(woff - 1))) {
+                continue;
+            }
         }
-      }
-      return woff;
+        if (strictRight && (woff + subStr.length) < wholeStr.length) {
+            if (WORD_CHAR.test(wholeStr.charAt(woff + subStr.length))) {
+                continue;
+            }
+        }
+        return woff;
     } while (spos < wholeStr.length);
     return -1;
 }
