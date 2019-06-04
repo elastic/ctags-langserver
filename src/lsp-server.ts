@@ -3,8 +3,8 @@ import { InitializeParams, InitializeResult,
     SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams} from 'vscode-languageserver-protocol';
 import { SymbolLocator } from '@elastic/lsp-extension';
 
-import { Logger, PrefixingLogger, ConsoleLogger } from './logger';
-import { execSync } from 'child_process';
+import { Logger, PrefixingLogger } from './logger';
+import { fork } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
 import * as grep from 'grep1';
@@ -34,7 +34,7 @@ export class LspServer {
         this.initializeParams = params;
 
         this.rootPath = fileURLToPath(params.rootUri!);
-        this.runCtags(this.rootPath);
+        await this.runCtags(this.rootPath);
 
         this.initializeResult = {
             capabilities: {
@@ -61,7 +61,7 @@ export class LspServer {
         return new Promise<SymbolInformation[]>(resolve => {
             let results: SymbolInformation[] = [];
             stream.on('data', (tags) => {
-                const definitions = tags.filter(tag => tag.file === relativePath);
+                const definitions = tags.filter(tag => tag.file === filePath);
                 for (let def of definitions) {
                     let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
@@ -202,29 +202,30 @@ export class LspServer {
     }
 
     private runCtags(rootPath: string) {
-        const ctagsPath = this.findCtagsPath();
-        try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath });
-        } catch (err) {
-            this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
-            this.logger.error(`${err.stderr}`);
-        }
-
-        try {
-            if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
-                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);
+        return new Promise<Boolean>(resolve => {
+            try {
+                // fork another process
+                const process = fork('./src/ctags-runner.ts');
+                process.on('exit', (code) => {
+                    try {
+                        if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
+                            this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);
+                            resolve(false);
+                        }
+                    } catch (err) {
+                        this.logger.error(err);
+                        resolve(false);
+                    }
+                    if (code === 0) {
+                        resolve(true);
+                    }
+                });
+                process.send( rootPath );
+            } catch (err) {
+                this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
+                this.logger.error(`${err.stderr}`);
             }
-        } catch (err) {
-            this.logger.error(err);
-        }
-    }
-
-    protected findCtagsPath(): string {
-        if (this.options.ctagsPath) {
-            return this.options.ctagsPath;
-        } else {
-            return 'ctags';
-        }
+        });
     }
 
 }

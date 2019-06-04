@@ -3,5 +3,5 @@ lib
 node_modules
 *.log
 tsconfig.tsbuildinfo
-.vscode
-build
+.vscode/
+build/

@@ -17,6 +17,7 @@
 	"private": true,
 	"scripts": {
 		"compile": "tsc -b",
+		"build": "node-gyp configure build",
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
 		"prepare": "echo 'skip'",
@@ -29,8 +30,9 @@
 		"nuclide-prebuilt-libs": "^0.5.7",
 		"line-column": "^1.0.2",
 		"@elastic/lsp-extension": "^0.1.1",
-		"grep1": "^0.0.5"
-	},
+		"grep1": "^0.0.5",
+		"node-gyp": "^4.0.0"
+    },
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
 		"@types/node": "^12.0.4",
