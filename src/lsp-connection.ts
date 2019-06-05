@@ -8,7 +8,7 @@ import {
   } from 'vscode-jsonrpc';
 
 import { LspServer } from './lsp-server';
-import { InitializeParams, DidChangeWorkspaceFoldersParams, DocumentSymbolParams, TextDocumentPositionParams } from 'vscode-languageserver';
+import { InitializeParams, DidChangeWorkspaceFoldersParams, DocumentSymbolParams, TextDocumentPositionParams, ReferenceParams } from 'vscode-languageserver';
 import { ConsoleLogger, LspClientLogger } from './logger';
 import { LspClientImpl } from './lsp-client';
 import { FullParams } from '@elastic/lsp-extension';
@@ -67,6 +67,10 @@ export function createLspConnection(options: IServerOptions) {
 
         clientConnection.onRequest('textDocument/edefinition', async (params: TextDocumentPositionParams) => {
             return await lspServer.eDefinition(params);
+        });
+
+        clientConnection.onRequest('textDocument/references', async (params: ReferenceParams) => {
+            return await lspServer.reference(params);
         });
         clientConnection.listen();
     });
