@@ -34,7 +34,7 @@ export function cutLineText(origin: string): string {
 }
 
 function strictIndexOf(wholeStr: string, subStr: string): number {
-    let stricLeft: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(0));
+    let strictLeft: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(0));
     let strictRight: boolean = subStr.length > 0 && WORD_CHAR.test(subStr.charAt(subStr.length - 1));
 
     let spos = 0;
@@ -45,7 +45,7 @@ function strictIndexOf(wholeStr: string, subStr: string): number {
         }
 
         spos = woff + 1;
-        if (stricLeft && woff > 0) {
+        if (strictLeft && woff > 0) {
             if (WORD_CHAR.test(wholeStr.charAt(woff - 1))) {
                 continue;
             }

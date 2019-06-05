@@ -26,8 +26,8 @@
 	"dependencies": {
         "commander": "^2.11.0",
         "vscode-languageserver": "^4.4.0",
-        "nuclide-prebuilt-libs": "^0.5.7",
-        "line-column": "^1.0.2",
+		"nuclide-prebuilt-libs": "^0.5.7",
+		"line-column": "^1.0.2",
 		"@elastic/lsp-extension": "^0.1.1",
 		"grep1": "^0.0.5"
     },
