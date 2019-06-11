@@ -2,14 +2,13 @@ import { Command } from 'commander';
 import { createLspConnection } from './lsp-connection';
 import * as lsp from 'vscode-languageserver';
 
-const defaultLspPort = 2092
 
 const program = new Command('ctags-language-server')
     .version(require('../package.json').version)
     .option('--stdio', 'use stdio')
     .option('--node-ipc', 'use node-ipc')
     .option('--log-level <logLevel>', 'A number indicating the log level (4 = log, 3 = info, 2 = warn, 1 = error). Defaults to `2`.')
-    .option('-p, --port <port>', 'specifies LSP port to use (' + defaultLspPort + ')', parseInt)
+    .option('--socket <port>', 'use socket. example: --socket=5000')
     .option('--ctags-path <path>', `Specify path to ctags. example: --ctags-path=${getCtagsExecutable()}`)
     .parse(process.argv);
 
@@ -25,8 +24,7 @@ if (program.logLevel) {
 createLspConnection({
     ctagsPath: program.ctagsPath as string,
     showMessageLevel: logLevel as lsp.MessageType,
-    lspPort: program.port as number
-});
+}).listen();
 
 
 function getCtagsExecutable(): string {
