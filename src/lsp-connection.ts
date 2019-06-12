@@ -1,81 +1,31 @@
-import * as net from 'net';
 import * as lsp from 'vscode-languageserver';
-
-import {
-    createMessageConnection,
-    SocketMessageReader,
-    SocketMessageWriter,
-  } from 'vscode-jsonrpc';
-
 import { LspServer } from './lsp-server';
-import { InitializeParams, DidChangeWorkspaceFoldersParams, DocumentSymbolParams, TextDocumentPositionParams, ReferenceParams } from 'vscode-languageserver';
-import { ConsoleLogger, LspClientLogger } from './logger';
+import { DidChangeWorkspaceFoldersNotification } from 'vscode-languageserver';
+import { LspClientLogger } from './logger';
 import { LspClientImpl } from './lsp-client';
-import { FullParams } from '@elastic/lsp-extension';
+import { EDefinitionRequest } from './lsp-protocol.edefinition.proposed';
 
 export interface IServerOptions {
     ctagsPath: string;
-    showMessageLevel: lsp.MessageType;
-    lspPort: number
+    showMessageLevel: lsp.MessageType
 }
 
-export function createLspConnection(options: IServerOptions) {
-    const consoleLogger = new ConsoleLogger();
-    let counter = 1;
-    const server = net.createServer(socket => {
-        const id = counter++;
-        consoleLogger.log(`Connection ${id} accepted`);
+export function createLspConnection(options: IServerOptions): lsp.IConnection {
 
-        const messageReader = new SocketMessageReader(socket);
-        const messageWriter = new SocketMessageWriter(socket);
-        const clientConnection = createMessageConnection(messageReader, messageWriter, this.logger);
-
-        const lspClient = new LspClientImpl(clientConnection);
-        const logger = new LspClientLogger(lspClient, options.showMessageLevel);
-
-        const lspServer = new LspServer({
-            logger: logger,
-            ctagsPath: options.ctagsPath
-        });
-
-        // Add exit notification handler to close the socket on exit
-        clientConnection.onNotification('exit', () => {
-            socket.end();
-            socket.destroy();
-            consoleLogger.log(`Connection ${id} closed (exit notification)`);
-        });
-
-        clientConnection.onRequest('initialize', async (params: InitializeParams) => {
-            return await lspServer.initialize(params);
-        });
-
-        clientConnection.onRequest('workspace/didChangeWorkspaceFolders', (params: DidChangeWorkspaceFoldersParams) => {
-            lspServer.didChangeWorkspaceFolders(params);
-        });
-
-        clientConnection.onRequest('textDocument/documentSymbol', async (params: DocumentSymbolParams) => {
-            return await lspServer.documentSymbol(params);
-        });
-
-        // clientConnection.onRequest('textDocument/full', async (params: FullParams) => {
-        //     return await lspServer.documentSymbol(params);
-        // });
-
-        clientConnection.onRequest('textDocument/hover', async (params: TextDocumentPositionParams) => {
-            return await lspServer.hover(params);
-        });
-
-        clientConnection.onRequest('textDocument/edefinition', async (params: TextDocumentPositionParams) => {
-            return await lspServer.eDefinition(params);
-        });
-
-        clientConnection.onRequest('textDocument/references', async (params: ReferenceParams) => {
-            return await lspServer.reference(params);
-        });
-        clientConnection.listen();
+    const connection = lsp.createConnection();
+    const lspClient = new LspClientImpl(connection);
+    const logger = new LspClientLogger(lspClient, options.showMessageLevel);
+    const server: LspServer = new LspServer({
+        logger,
+        ctagsPath: options.ctagsPath
     });
 
-    server.listen(options.lspPort, () => {
-        consoleLogger.info(`Listening for incoming LSP connections on ${options.lspPort}`)
-    });
+    connection.onInitialize(server.initialize.bind(server));
+    connection.onNotification(DidChangeWorkspaceFoldersNotification.type, server.didChangeWorkspaceFolders.bind(server));
+    connection.onRequest(EDefinitionRequest.type, server.eDefinition.bind(server));
+    connection.onDocumentSymbol(server.documentSymbol.bind(server));
+    connection.onHover(server.hover.bind(server));
+    connection.onReferences(server.reference.bind(server));
+
+    return connection;
 }

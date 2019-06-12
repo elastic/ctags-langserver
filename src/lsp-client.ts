@@ -7,7 +7,7 @@ export interface LspClient {
 }
 
 export class LspClientImpl implements LspClient {
-    constructor(protected connection: MessageConnection) {
+    constructor(protected connection: lsp.IConnection) {
     }
 
     showMessage(args: lsp.ShowMessageParams): void {
