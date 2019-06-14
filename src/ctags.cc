@@ -1,4 +1,5 @@
 #include <node.h>
+#include <string.h>
 
 extern "C" {
    extern int ctags_cli_main (int argc, char **argv);
