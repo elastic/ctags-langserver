@@ -1,28 +1,35 @@
 {
 	"name": "@elastic/ctags-langserver",
-	"version": "1.0.0",
-	"description": "An all-languages language server built on top of ctags",
-	"author": "Elastic",
-	"license": "Apache-2.0",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/elastic/ctags-langserver.git"
-	},
-	"files": [
-		"lib"
+    "version": "1.0.0",
+    "description": "An all-languages language server built on top of ctags",
+    "author": "Elastic",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/elastic/ctags-langserver.git"
+    },
+    "files": [
+        "lib"
 	],
-	"bin": {
-		"ctags-language-server": "./lib/cli.js"
+	"main": "./lib/cli.js",
+    "bin": {
+        "ctags-language-server": "./lib/cli.js"
+    },
+	"binary": {
+		"module_name": "ctags",
+		"module_path": "./build/Release/",
+		"host": "https://download.elasticsearch.org/code/ctags/"
 	},
-	"private": true,
 	"scripts": {
 		"compile": "tsc -b",
 		"build": "node-gyp configure build",
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
 		"prepare": "echo 'skip'",
-		"clean": "rimraf lib",
-		"lint": "tslint -c ../tslint.json --project ."
+        "clean": "rimraf lib",
+		"lint": "tslint -c ../tslint.json --project .",
+		"install": "node-pre-gyp install --fallback-to-build",
+		"prepublish": "node-pre-gyp package publish info"
 	},
 	"dependencies": {
 		"commander": "^2.11.0",
@@ -31,7 +38,8 @@
 		"line-column": "^1.0.2",
 		"@elastic/lsp-extension": "^0.1.1",
 		"grep1": "^0.0.5",
-		"node-gyp": "^4.0.0"
+		"node-gyp": "^4.0.0",
+		"node-pre-gyp": "^0.13.0"
     },
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
@@ -41,6 +49,7 @@
 		"typescript": "^3.4.5",
 		"jest": "^24.8.0",
 		"ts-jest": "^24.0.2",
-		"ts-node": "7.0.1"
+		"ts-node": "7.0.1",
+		"aws-sdk": "^2.477.0"
 	}
 }
