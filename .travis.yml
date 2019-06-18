@@ -1,0 +1,46 @@
+sudo: false
+dist: trusty
+branches:
+  only:
+  - master
+  - "/^v\\d+\\.\\d+\\.\\d+(-alpha\\.\\d+)?$/"
+
+compiler: clang
+language: node_js
+
+node_js:
+- '10'
+
+os:
+- linux
+- osx
+
+env:
+  global:
+  - secure: NMQ9LLIZV7md7LoWDZou93rFu/5QhiPEMErgskOIJIWRSi8bQ11WWgQAbfTYiULvij3a9+Axlbea4VBG2szRvtAt0p9B6XdlYV/WL/HiQXEr3eyoQVcIFsr5QPofWExYKaupY+KONlGcFUMF+oVWoZMz4jEYDQ8WgyyevLeVDWSfMgnVX0gazz53GFlSRIfjo/wOGvsd4vAhBpCpQxqM6LVpnAjVggMg9niF5UlGcSD0lQbZUN3AXWjNEsFgsChcvimzuXRmg5UayePECJFDX66Eg5bMh4/1vpLZHaZ6SE/2etXGsMhpMsloYobHjgOsudHiIxrIa/zzA96ZcDPlll4m6dFtxm2+Lsa16DabvrAZIbmc1tVx5Qnzjsgcj0xcTwzOMfUKJbojMR5ZskVe7/0mWUsj5j82aQtMr14EHpbhWR8dXtfDmP+JD3rgcUpa0iqBmDwLvQXTNI5CLK5zP4z8prQbVftXDec9QL+gjX1vNL4L6iUQtdbdg/xAjplTk6f0gQrPdkv0N/WpJIRzwRQLsikOS4OYL5txLnsnjpWvMluGJssFwVN8gKSNY7pbbqrDSfPEznViVqL0ObJvCIoChFzSnqq+8AlxwOGrZUiJq0gJF+kwJQyAuT7TnT+8GaqdcdsqzT1gKhKaUDl1XS5qBiUjPe5Q6aMTzAYYQqY=
+  - secure: B4En3bGjZvakX1oz3epAhA0sgDXmCni2G57sNBDfdAbVhzgA1E9gEzYEB3NIHEJ89RAWUQILvNR0FPTA58OlWs2/IIrsDq/VrHnsMcg5mrbFI4w5Lj5G6NcOGP170HsLvARLBxcVVXgJ7wEtzS0axPQQQA9DDC1KolGFqGFR5zGcAFoLgraawLLBmKy+jjOMX2Ebm5zyAqP88I64CiFP5C0/f/XSQGOJ+/+qlkRShbuXpcpPfc52YUOhLtAaFeMS2pZ8ln2uEXvJg0bc/TEbhvY5v2B0Oofe1Q8qXFB/jpaVFaEEMLuyNnskpNPQ28g+F0peN1pmPky737PVmgw8cxnH4aIaF0IMNvb1BDWk5lyg2uZ9jgZZLCMUYwKagH97/oHaiR8T80w5Xbpe6zi4HCBn/AoaL5o0jb2TlII2e52sSkEDMRvuiZbbfUfVkk87+4X00I69uQ5nLY6/1tMGNSAljzDd09Sd0nSk/Gl9kwgAuvS/cucS9//6oUYovOGGNqoG5ZiQKTpO7jh1YPQ/7VHhVYpMxoJ5DW2STqrgN7l0rHzSw3T1Iqi3xEmgF/iRdWR2HWmF1qNdGm4lPlb4eV8JJPETmyYsBoaBhjrhNlkSIpbwMbsMS+N5kKsRvZ3/nfiXvF3TL4UdWjAnHNPgSK+ezTumehvLgwPtUEYXqm4=
+  - secure: cV8o4blfJfG8AnBJw5Ars7orXHyrjAILNNUfVq65v+W/VcCvdib6kagMyAs6W7ywaD8eiq7qsPgpj6yx+NvXoeQYNyBPXf+WfOTKu8zkBvSYSBTFBPmRzuWLnARAw43XOeeaUIRQle8NINu6YKSl9UxcnT4bkul0uVWzBjcOBAWq+KeWLbVYNlL0pgYLx9Q5vbAwAEp0goFrJ9IZlzX7qT79yvtHSO45xr+VwOCTrQF8pubEonFY+JtYbJ20Ry78EZ7J8mCdx5X3Ho3HfBMaRPnFF/GdUQFySYxPiBzdkYB3xKZz/cLh7hOn5Z1eRZel60OfyVNfEcAIYeV479adAqVdfTkvrgyWOrv6lEj6v5jVuMI7LEUa5e7UVDm2/nHu8EcIojZg65CrGwQ7Ts/KRcdj7sJYBut2kcdKiZ2ST6SIMVMJQVSX+ahVk0IJjcJXLXGIoGRbHq459WzLVS9Y0C+K+HTzEhoXilos1zD3uSjyCyvEiPhhS4VZzt5E6fRHW7gO5GFYQCazx1ZO18cTxzIfhXN+h3W+mkDTL9yMZpOcgY1yELSy7XPtggJiyQd8I+NWhMn4ZuD6Lje8PauGcpYNKn0NTbzY8X13cun5FpCSuDPoZOCQjRCUnXRvFkNUBiBEjlOjQb+RFWmdS4wqSob8uykoNZmbhpXwk3PbrRk=
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - build-essential
+      - clang
+      - gcc-4.9-multilib
+      - g++-4.9-multilib
+      - lcov
+
+install:
+- set -e;
+- travis_retry yarn install
+
+script:
+# if publishing, test installing from remote
+- INSTALL_RESULT=0
+- INSTALL_RESULT=$(npm install --fallback-to-build=false > /dev/null)$? || true; fi;
+# if install returned non zero (errored) then we first unpublish and then call false so travis will bail at this line
+- if [[ $INSTALL_RESULT != 0 ]]; then echo "returned $INSTALL_RESULT";yarn unpublish;false; fi
+# If success then we arrive here so lets clean up
+- yarn clean

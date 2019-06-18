@@ -26,10 +26,11 @@
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
 		"prepare": "echo 'skip'",
-        "clean": "rimraf lib",
+        "clean": "rimraf lib && node-pre-gyp clean",
 		"lint": "tslint -c ../tslint.json --project .",
 		"install": "node-pre-gyp install --fallback-to-build",
-		"prepublish": "node-pre-gyp package publish info"
+		"prepublish": "node-pre-gyp package publish info",
+		"unpublish": "node-pre-gyp unpublish"
 	},
 	"dependencies": {
 		"commander": "^2.11.0",
