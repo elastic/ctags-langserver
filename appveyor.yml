@@ -1,0 +1,52 @@
+# appveyor file
+# https://www.appveyor.com/docs/appveyor-yml/
+
+image: Visual Studio 2015
+
+platform:
+  - x64
+  - x86
+
+# build version format
+version: "{build}"
+
+# Set a known clone folder
+clone_folder: c:\projects\ctags-langserver
+
+# fix line endings in Windows
+init:
+  - git config --global core.autocrlf input
+  - git config --global user.name "John Doe"
+  - git config --global user.email johndoe@example.com
+
+# what combinations to test
+environment:
+  JOBS: 4
+  GYP_MSVS_VERSION: 2015
+  matrix:
+    # Node.js
+    - nodejs_version: "10"
+
+
+matrix:
+  fast_finish: true
+
+# Get the latest stable version of Node 0.STABLE.latest
+install:
+  - ps: Install-Product node $env:nodejs_version $env:platform
+  - appveyor-retry call yarn build
+  - appveyor-retry call yarn install
+
+# test_script:
+#   - node --version
+#   - npm --version
+#   - appveyor-retry call yarn test
+
+# on_success:
+#   - IF %APPVEYOR_REPO_TAG%==true npm install -g node-pre-gyp
+#   - IF %APPVEYOR_REPO_TAG%==true npm install -g aws-sdk
+#   - IF %APPVEYOR_REPO_TAG%==true node lifecycleScripts\clean
+#   - IF %APPVEYOR_REPO_TAG%==true node-pre-gyp package
+#   - IF %APPVEYOR_REPO_TAG%==true node-pre-gyp publish
+
+build: off
