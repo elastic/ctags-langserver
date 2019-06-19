@@ -4,7 +4,6 @@
 image: Visual Studio 2015
 
 platform:
-  - x64
   - x86
 
 # build version format
@@ -13,12 +12,6 @@ version: "{build}"
 # Set a known clone folder
 clone_folder: c:\projects\ctags-langserver
 
-# fix line endings in Windows
-init:
-  - git config --global core.autocrlf input
-  - git config --global user.name "John Doe"
-  - git config --global user.email johndoe@example.com
-
 # what combinations to test
 environment:
   JOBS: 4
@@ -26,13 +19,64 @@ environment:
   matrix:
     # Node.js
     - nodejs_version: "10"
-
+  node_pre_gyp_accessKeyId:
+    secure: xG3B1rJPvetk1SGxpl/S+1+7rDzNFfMIckC/gEBGSp8=
+  node_pre_gyp_secretAccessKey:
+    secure: 3AqKjl1ts6h9Y+M9LAWFdepszwxnbf2/8Svhs/kdXw5T05Gch51nwQ/wJoYUOlX9
+  node_pre_gyp_bucket:
+    secure: Ar196dhq7UOjuPYgtQSqYUr/w1pbuFqU5uzShz9HfT8=
 
 matrix:
   fast_finish: true
 
-# Get the latest stable version of Node 0.STABLE.latest
 install:
+  - appveyor DownloadFile https://github.com/mhils/libxml2-win-binaries/releases/download/2017.09.17/libxml2-2.9.5.win32.zip
+  - ps: "7z e libxml2-2.9.5.win32.zip . *.lib -r"
+  - appveyor DownloadFile https://github.com/mhils/libxml2-win-binaries/releases/download/2017.09.17/iconv-1.14.win32.zip
+  - ps: "7z e iconv-1.14.win32.zip . *.lib -r"
+  - ps: install-module pscx -scope CurrentUser -AllowClobber
+  - ps: wget https://github.com/Poytr1/ctags/archive/master.zip -OutFile .\ctags.zip
+  - 7z x ctags.zip -aoa
+  - ps:  .\build.ps1
+  # - ps: Start-Process -NoNewWindow -Wait nmake "-f mk_mvc.mak"
+  # - ps:    ls
+  # - ps:    cd ..
+  # - ps:    wget https://github.com/GNOME/libxml2/archive/master.zip -OutFile ./libxml2.zip
+  # - 7z x libxml2.zip -aoa
+  # - ps:    cd libxml2-master
+  # - C:\cygwin64\bin\sh -c "export PATH=/usr/bin:/usr/local/bin:$PATH && ./autogen.sh && ./configure && make"
+  # - ps:    ls
+  # - ps:    cd ..
+  # - ps:    wget https://github.com/yaml/libyaml/archive/master.zip -OutFile ./libyaml.zip
+  # - 7z x libyaml.zip -aoa
+  # - ps:    cd libyaml-master
+  # - C:\cygwin64\bin\sh -c "export PATH=/usr/bin:/usr/local/bin:$PATH && ./bootstrap && ./configure && make"
+  # - ps:    cd ..
+  - ps:    Copy-Item .\ctags-master\libctags_a.lib .\thirdparty\libctags_a.lib
+  # - ps:    Copy-Item .\libxml2-master\.libs\libxml2.a .\thirdparty
+  # - ps:    Copy-Item .\libyaml-master\src\.libs\libyaml.a .\thirdparty
+  - ps: Install-Product node $env:nodejs_version $env:platform
+  - yarn build-win
+  - appveyor-retry call yarn install
+  - yarn unpublish
+# build_script:
+#   - ps: "wget https://github.com/universal-ctags/ctags/archive/master.zip -OutFile ./ctags.zip"
+#   - "7z x ctags.zip -octags-master -aoa"
+#   - ps: "cd ctags-master"
+#   - C:\cygwin64\bin\sh -c "export PATH=/usr/bin:/usr/local/bin:$PATH && ./autogen.sh && ./configure && make"
+#   - ps: "ls"
+
+# Get the latest stable version of Node 0.STABLE.latest
+build_script:
+  # - ps: "wget https://github.com/universal-ctags/ctags/archive/master.zip -OutFile ./ctags.zip"
+  # - "7z x ctags.zip -octags-master -aoa"
+  # - ps: "ls ctags-master"
+  # - appveyor DownloadFile https://github.com/mhils/libxml2-win-binaries/releases/download/2017.09.17/libxml2-2.9.5.win64.zip
+  # - ps: "7z e libxml2-2.9.5.win64.zip . *.lib -r"
+  # - appveyor DownloadFile https://github.com/mhils/libxml2-win-binaries/releases/download/2017.09.17/iconv-1.14.win64.zip
+  # - ps: "7z e iconv-1.14.win64.zip . *.lib -r"
+  # - ps: "cd ctags-master"
+  # - ps: "nmake -f mk_mvc.mak WITH_ICONV=yes ICONV_DIR=../iconv_a.lib"
   - ps: Install-Product node $env:nodejs_version $env:platform
   - appveyor-retry call yarn build
   - appveyor-retry call yarn install

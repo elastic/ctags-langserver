@@ -1,20 +1,20 @@
 {
 	"name": "@elastic/ctags-langserver",
-    "version": "1.0.0",
-    "description": "An all-languages language server built on top of ctags",
-    "author": "Elastic",
-    "license": "Apache-2.0",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/elastic/ctags-langserver.git"
-    },
-    "files": [
-        "lib"
+	"version": "0.0.1",
+	"description": "An all-languages language server built on top of ctags",
+	"author": "Elastic",
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/elastic/ctags-langserver.git"
+	},
+	"files": [
+		"lib"
 	],
 	"main": "./lib/cli.js",
-    "bin": {
-        "ctags-language-server": "./lib/cli.js"
-    },
+	"bin": {
+		"ctags-language-server": "./lib/cli.js"
+	},
 	"binary": {
 		"module_name": "ctags",
 		"module_path": "./build/Release/",
@@ -22,11 +22,12 @@
 	},
 	"scripts": {
 		"compile": "tsc -b",
+		"build-win": "node-gyp configure && node-gyp --arch=ia32 build",
 		"build": "node-gyp configure build",
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
 		"prepare": "echo 'skip'",
-        "clean": "rimraf lib && node-pre-gyp clean",
+		"clean": "rimraf lib && node-pre-gyp clean",
 		"lint": "tslint -c ../tslint.json --project .",
 		"install": "node-pre-gyp install --fallback-to-build",
 		"prepublish": "node-pre-gyp package publish info",
@@ -41,7 +42,7 @@
 		"grep1": "^0.0.5",
 		"node-gyp": "^4.0.0",
 		"node-pre-gyp": "^0.13.0"
-    },
+	},
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
 		"@types/node": "^12.0.4",
