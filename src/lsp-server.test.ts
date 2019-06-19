@@ -4,7 +4,7 @@ import * as path from 'path';
 import { pathToFileURL } from 'url';
 import { LspServer } from './lsp-server';
 import { ConsoleLogger } from './logger';
-import { SymbolLocator } from '@elastic/lsp-extension';
+import { SymbolLocator, Full } from '@elastic/lsp-extension';
 
 const content = "int max(int foo, int bar)\n" +
                     "{\n" +
@@ -52,6 +52,31 @@ test('test documentSymbol', async () => {
         location: Location.create(sourceFileUrl, Range.create(Position.create(0, 0), Position.create(0, 0))),
         containerName: 'test.c'
     }])
+});
+
+test('test full', async () => {
+    const full: Full = await lspServer.full({
+        textDocument: TextDocumentIdentifier.create(sourceFileUrl),
+        reference: false
+    });
+    expect(full).toEqual({
+        "references": null,
+        "symbols": [{
+            symbolInformation: {
+                name: 'a',
+                kind: SymbolKind.Variable,
+                location: Location.create(sourceFileUrl, Range.create(Position.create(9, 0), Position.create(9, 0))),
+                containerName: 'test.c'
+        },
+        }, {
+            symbolInformation: {
+                name: 'max',
+                kind: SymbolKind.Function,
+                location: Location.create(sourceFileUrl, Range.create(Position.create(0, 0), Position.create(0, 0))),
+                containerName: 'test.c'
+            }
+        }]
+    });
 });
 
 test('test definition', async () => {
