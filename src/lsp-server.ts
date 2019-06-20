@@ -1,7 +1,7 @@
 import { InitializeParams, InitializeResult,
     DidChangeWorkspaceFoldersParams, DocumentSymbolParams,
     SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams} from 'vscode-languageserver-protocol';
-import { SymbolLocator } from '@elastic/lsp-extension';
+import { SymbolLocator, FullParams, Full, DetailSymbolInformation } from '@elastic/lsp-extension';
 
 import { Logger, PrefixingLogger, ConsoleLogger } from './logger';
 import { execSync } from 'child_process';
@@ -119,6 +119,21 @@ export class LspServer {
                 resolve(results);
             });
         });
+    }
+
+    async full(params: FullParams): Promise<Full> {
+        this.logger.log('full', params);
+        const symbols: SymbolInformation[] = await this.documentSymbol({ textDocument: params.textDocument});
+        const detailSymbols: DetailSymbolInformation[] = symbols.map(symbol => ({
+            symbolInformation: symbol
+        }));
+        if (params.reference) {
+            // TODO(pcxu): add references
+        }
+        return {
+            symbols: detailSymbols,
+            references: null
+        };
     }
 
     async hover(params: TextDocumentPositionParams): Promise<Hover> {

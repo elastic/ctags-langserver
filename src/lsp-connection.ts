@@ -3,7 +3,7 @@ import { LspServer } from './lsp-server';
 import { DidChangeWorkspaceFoldersNotification } from 'vscode-languageserver';
 import { LspClientLogger } from './logger';
 import { LspClientImpl } from './lsp-client';
-import { EDefinitionRequest } from './lsp-protocol.edefinition.proposed';
+import { EDefinitionRequest, FullRequest } from './lsp-protocol.edefinition.proposed';
 
 export interface IServerOptions {
     ctagsPath: string;
@@ -23,6 +23,7 @@ export function createLspConnection(options: IServerOptions): lsp.IConnection {
     connection.onInitialize(server.initialize.bind(server));
     connection.onNotification(DidChangeWorkspaceFoldersNotification.type, server.didChangeWorkspaceFolders.bind(server));
     connection.onRequest(EDefinitionRequest.type, server.eDefinition.bind(server));
+    connection.onRequest(FullRequest.type, server.full.bind(server));
     connection.onDocumentSymbol(server.documentSymbol.bind(server));
     connection.onHover(server.hover.bind(server));
     connection.onReferences(server.reference.bind(server));
