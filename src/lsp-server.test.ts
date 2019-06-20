@@ -1,4 +1,4 @@
-import { SymbolKind, Range, Position, SymbolInformation, Hover, Location, TextDocumentIdentifier} from 'vscode-languageserver-protocol';
+import { SymbolKind, Range, Position, SymbolInformation, Hover, Location, TextDocumentIdentifier } from 'vscode-languageserver-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
@@ -19,9 +19,10 @@ const content = "int max(int foo, int bar)\n" +
 let lspServer: LspServer;
 let sourceFilePath: string;
 let sourceFileUrl: string;
+let rootPath: string;
 
 beforeAll(async () => {
-    const rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
     sourceFilePath = path.resolve(rootPath, 'test.c');
     sourceFileUrl = pathToFileURL(sourceFilePath).toString();
     fs.writeFileSync(sourceFilePath, content);
@@ -36,6 +37,24 @@ beforeAll(async () => {
     });
     expect(fs.existsSync(path.resolve(rootPath, 'tags'))).toBe(true);
 });
+
+test('test didChangeWorkspaceFolders', () => {
+    const addedRootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    const addedSourceFilePath = path.resolve(addedRootPath, 'test.c');
+    fs.writeFileSync(addedSourceFilePath, content);
+    lspServer.didChangeWorkspaceFolders({
+        event: {
+            added: [
+                {
+                    uri: pathToFileURL(addedRootPath).toString(),
+                    name: "ctags-langserver"
+                }
+            ],
+            removed: []
+        }
+    });
+    expect(fs.existsSync(path.resolve(addedRootPath, 'tags'))).toBe(true);
+})
 
 test('test documentSymbol', async () => {
     const symbols: SymbolInformation[] = await lspServer.documentSymbol({
@@ -111,4 +130,9 @@ test('test references', async () => {
         Location.create(sourceFileUrl, Range.create(Position.create(0, 4), Position.create(0, 7))),
         Location.create(sourceFileUrl, Range.create(Position.create(9, 8), Position.create(9, 11)))
     ])
+});
+
+test('test find belonged root path', () => {;
+    const belongedRootPath = lspServer.findBelongedRootPath(sourceFilePath);
+    expect(belongedRootPath).toEqual(rootPath);
 });
