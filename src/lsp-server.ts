@@ -50,9 +50,19 @@ export class LspServer {
     }
 
     didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
-        const rootPath = fileURLToPath(params.event.added[0].uri);
-        this.runCtags(rootPath);
-        this.rootPaths.push(rootPath);
+        const added = params.event.added;
+        const removed = params.event.removed;
+        added.forEach(add => {
+            const rootPath = fileURLToPath(add.uri);
+            this.runCtags(rootPath);
+            this.rootPaths.push(rootPath);
+        });
+        removed.forEach(remove => {
+            const index = this.rootPaths.indexOf(fileURLToPath(remove.uri));
+            if (index !== -1) {
+                this.rootPaths.slice(index, 1);
+            }
+        });
     }
 
     async documentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
