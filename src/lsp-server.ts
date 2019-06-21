@@ -3,7 +3,7 @@ import { InitializeParams, InitializeResult,
     SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams} from 'vscode-languageserver-protocol';
 import { SymbolLocator, FullParams, Full, DetailSymbolInformation } from '@elastic/lsp-extension';
 
-import { Logger, PrefixingLogger, ConsoleLogger } from './logger';
+import { Logger, PrefixingLogger } from './logger';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
@@ -21,7 +21,7 @@ export class LspServer {
 
     protected initializeParams: InitializeParams;
     private initializeResult: InitializeResult;
-    private rootPath: string;
+    private rootPaths: string[] = [];
     protected logger: Logger;
     readonly tagFileName = 'tags'
 
@@ -33,8 +33,9 @@ export class LspServer {
         this.logger.log('initialize', params);
         this.initializeParams = params;
 
-        this.rootPath = fileURLToPath(params.rootUri!);
-        this.runCtags(this.rootPath);
+        const rootPath = fileURLToPath(params.rootUri!);
+        this.runCtags(rootPath);
+        this.rootPaths.push(rootPath);
 
         this.initializeResult = {
             capabilities: {
@@ -49,15 +50,27 @@ export class LspServer {
     }
 
     didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
-        this.rootPath = fileURLToPath(params.event.added[0].uri);
-        this.runCtags(this.rootPath);
+        const added = params.event.added;
+        const removed = params.event.removed;
+        added.forEach(add => {
+            const rootPath = fileURLToPath(add.uri);
+            this.runCtags(rootPath);
+            this.rootPaths.push(rootPath);
+        });
+        removed.forEach(remove => {
+            const index = this.rootPaths.indexOf(fileURLToPath(remove.uri));
+            if (index !== -1) {
+                this.rootPaths.splice(index, 1);
+            }
+        });
     }
 
     async documentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
         this.logger.log('documentSymbol', params);
         const filePath = fileURLToPath(params.textDocument.uri);
-        const relativePath = path.relative(this.rootPath, filePath);
-        const stream = ctags.createReadStream(path.resolve(this.rootPath, this.tagFileName));
+        const rootPath = this.findBelongedRootPath(filePath);
+        const relativePath = path.relative(rootPath, filePath);
+        const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
         return new Promise<SymbolInformation[]>(resolve => {
             let results: SymbolInformation[] = [];
             stream.on('data', (tags) => {
@@ -142,13 +155,14 @@ export class LspServer {
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
+        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Hover>(resolve => {
             if (symbol === '') {
                 resolve({
                     contents: '' as MarkedString
                 });
             }
-            ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
+            ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
                     resolve({
                         contents: cutLineText(tag.pattern) as MarkedString
@@ -167,13 +181,14 @@ export class LspServer {
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
+        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<SymbolLocator>(resolve => {
             if (symbol === '') {
                 resolve(undefined);
             }
-            ctags.findTags(path.resolve(this.rootPath, this.tagFileName), symbol, (error, tags) => {
+            ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 for (let tag of tags) {
-                    const destURI = pathToFileURL(path.resolve(this.rootPath, tag.file));
+                    const destURI = pathToFileURL(path.resolve(rootPath, tag.file));
                     resolve({
                         location: Location.create(destURI.toString(), Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
                     });
@@ -190,9 +205,10 @@ export class LspServer {
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         const language: string = path.extname(fileName);
+        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Location[]>(resolve => {
             // limit the serach scope within same file extension
-            grep(['-n', symbol, '-R', `--include=*${language}`, this.rootPath], function(err, stdout: string, stderr) {
+            grep(['-n', symbol, '-R', `--include=*${language}`, rootPath], function(err, stdout: string, stderr) {
                 if (err || stderr) {
                     this.logger.error(err);
                     resolve(undefined);
@@ -214,6 +230,17 @@ export class LspServer {
                 }
               });
         });
+    }
+
+    public findBelongedRootPath(filePath: string): string {
+        const rootPath = this.rootPaths.find(rootPath => {
+            return filePath.startsWith(rootPath);
+        });
+        if (!rootPath) {
+            this.logger.error(`cannot find belonged root path for: ${filePath}`);
+            return '';
+        }
+        return rootPath;
     }
 
     private runCtags(rootPath: string) {
