@@ -69,6 +69,9 @@ export class LspServer {
         this.logger.log('documentSymbol', params);
         const filePath = fileURLToPath(params.textDocument.uri);
         const rootPath = this.findBelongedRootPath(filePath);
+        if (!rootPath) {
+            return [];
+        }
         const relativePath = path.relative(rootPath, filePath);
         const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
         return new Promise<SymbolInformation[]>(resolve => {
@@ -152,10 +155,13 @@ export class LspServer {
     async hover(params: TextDocumentPositionParams): Promise<Hover> {
         this.logger.log('hover', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return { contents: '' };
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Hover>(resolve => {
             if (symbol === '') {
                 resolve({
@@ -178,10 +184,13 @@ export class LspServer {
     async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
         this.logger.log('edefinition', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return {};
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<SymbolLocator>(resolve => {
             if (symbol === '') {
                 resolve(undefined);
@@ -201,11 +210,14 @@ export class LspServer {
     async reference(params: ReferenceParams): Promise<Location[]> {
         this.logger.log('references', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return [];
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         const language: string = path.extname(fileName);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Location[]>(resolve => {
             // limit the serach scope within same file extension
             grep(['-n', symbol, '-R', `--include=*${language}`, rootPath], function(err, stdout: string, stderr) {
