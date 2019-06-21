@@ -60,7 +60,7 @@ export class LspServer {
         removed.forEach(remove => {
             const index = this.rootPaths.indexOf(fileURLToPath(remove.uri));
             if (index !== -1) {
-                this.rootPaths.slice(index, 1);
+                this.rootPaths.splice(index, 1);
             }
         });
     }
