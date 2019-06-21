@@ -79,7 +79,7 @@ export class LspServer {
             stream.on('data', (tags) => {
                 const definitions = tags.filter(tag => tag.file === relativePath);
                 for (let def of definitions) {
-                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array,
+                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
                     if (def.fields !== undefined) {
                         if (def.fields.struct) {
@@ -169,7 +169,8 @@ export class LspServer {
                 });
             }
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
-                for (let tag of tags) {
+                if (tags.length > 0) {
+                    const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
                     resolve({
                         contents: cutLineText(tag.pattern) as MarkedString
                     });
@@ -196,7 +197,8 @@ export class LspServer {
                 resolve(undefined);
             }
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
-                for (let tag of tags) {
+                if (tags.length > 0) {
+                    const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
                     const destURI = pathToFileURL(path.resolve(rootPath, tag.file));
                     resolve({
                         location: Location.create(destURI.toString(), Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
@@ -253,6 +255,26 @@ export class LspServer {
             return '';
         }
         return rootPath;
+    }
+
+    private findClosestTag(tags: any[], fileName: string, line: number) {
+        // Priority for shoosing tags (high to low):
+        // 1. if line number equal or less than given line
+        // 2. absolute distance between two lines
+        // 3. if in the same file
+        const inFileTags = tags.filter(tag => tag.file = fileName);
+        if (inFileTags.length !== 0) {
+            inFileTags.sort(function(l, r) {
+                return (Math.abs(l.lineNumber - line) - Math.abs(r.lineNumber - line));
+            });
+            inFileTags.forEach(tag => {
+                if (tag.lineNumber <= line) {
+                    return tag;
+                }
+            });
+            return inFileTags[0];
+        }
+        return tags[0];
     }
 
     private runCtags(rootPath: string) {
