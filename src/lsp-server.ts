@@ -132,7 +132,7 @@ export class LspServer {
         }
         return {
             symbols: detailSymbols,
-            references: null
+            references: []
         };
     }
 

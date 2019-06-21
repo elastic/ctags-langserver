@@ -60,7 +60,7 @@ test('test full', async () => {
         reference: false
     });
     expect(full).toEqual({
-        "references": null,
+        "references": [],
         "symbols": [{
             symbolInformation: {
                 name: 'a',
