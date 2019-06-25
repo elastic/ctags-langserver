@@ -69,6 +69,9 @@ export class LspServer {
         this.logger.log('documentSymbol', params);
         const filePath = fileURLToPath(params.textDocument.uri);
         const rootPath = this.findBelongedRootPath(filePath);
+        if (!rootPath) {
+            return [];
+        }
         const relativePath = path.relative(rootPath, filePath);
         const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
         return new Promise<SymbolInformation[]>(resolve => {
@@ -76,7 +79,7 @@ export class LspServer {
             stream.on('data', (tags) => {
                 const definitions = tags.filter(tag => tag.file === relativePath);
                 for (let def of definitions) {
-                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Array,
+                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
                     if (def.fields !== undefined) {
                         if (def.fields.struct) {
@@ -152,10 +155,13 @@ export class LspServer {
     async hover(params: TextDocumentPositionParams): Promise<Hover> {
         this.logger.log('hover', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return { contents: '' };
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Hover>(resolve => {
             if (symbol === '') {
                 resolve({
@@ -163,7 +169,8 @@ export class LspServer {
                 });
             }
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
-                for (let tag of tags) {
+                if (tags.length > 0) {
+                    const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
                     resolve({
                         contents: cutLineText(tag.pattern) as MarkedString
                     });
@@ -178,16 +185,20 @@ export class LspServer {
     async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
         this.logger.log('edefinition', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return {};
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<SymbolLocator>(resolve => {
             if (symbol === '') {
                 resolve(undefined);
             }
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
-                for (let tag of tags) {
+                if (tags.length > 0) {
+                    const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
                     const destURI = pathToFileURL(path.resolve(rootPath, tag.file));
                     resolve({
                         location: Location.create(destURI.toString(), Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
@@ -201,11 +212,14 @@ export class LspServer {
     async reference(params: ReferenceParams): Promise<Location[]> {
         this.logger.log('references', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
+        const rootPath = this.findBelongedRootPath(fileName);
+        if (!rootPath) {
+            return [];
+        }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         const language: string = path.extname(fileName);
-        const rootPath = this.findBelongedRootPath(fileName);
         return new Promise<Location[]>(resolve => {
             // limit the serach scope within same file extension
             grep(['-n', symbol, '-R', `--include=*${language}`, rootPath], function(err, stdout: string, stderr) {
@@ -241,6 +255,26 @@ export class LspServer {
             return '';
         }
         return rootPath;
+    }
+
+    private findClosestTag(tags: any[], fileName: string, line: number) {
+        // Priority for shoosing tags (high to low):
+        // 1. if line number equal or less than given line
+        // 2. absolute distance between two lines
+        // 3. if in the same file
+        const inFileTags = tags.filter(tag => tag.file = fileName);
+        if (inFileTags.length !== 0) {
+            inFileTags.sort(function(l, r) {
+                return (Math.abs(l.lineNumber - line) - Math.abs(r.lineNumber - line));
+            });
+            inFileTags.forEach(tag => {
+                if (tag.lineNumber <= line) {
+                    return tag;
+                }
+            });
+            return inFileTags[0];
+        }
+        return tags[0];
     }
 
     private runCtags(rootPath: string) {
