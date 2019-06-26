@@ -7,7 +7,6 @@ import { Logger, PrefixingLogger } from './logger';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
-import * as grep from 'grep1';
 import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from 'nuclide-prebuilt-libs/ctags';
 import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText } from './utils';
@@ -41,8 +40,7 @@ export class LspServer {
             capabilities: {
                 definitionProvider: true,
                 documentSymbolProvider: true,
-                hoverProvider: true,
-                referencesProvider: true,
+                hoverProvider: true
             },
         };
         this.logger.log('onInitialize result', this.initializeResult);
@@ -206,43 +204,6 @@ export class LspServer {
                 }
                 resolve(undefined);
             });
-        });
-    }
-
-    async reference(params: ReferenceParams): Promise<Location[]> {
-        this.logger.log('references', params);
-        const fileName: string = fileURLToPath(params.textDocument.uri);
-        const rootPath = this.findBelongedRootPath(fileName);
-        if (!rootPath) {
-            return [];
-        }
-        const contents = readFileSync(fileName, 'utf8');
-        const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
-        const symbol: string = codeSelect(contents, offset);
-        const language: string = path.extname(fileName);
-        return new Promise<Location[]>(resolve => {
-            // limit the serach scope within same file extension
-            grep(['-n', symbol, '-R', `--include=*${language}`, rootPath], function(err, stdout: string, stderr) {
-                if (err || stderr) {
-                    this.logger.error(err);
-                    resolve(undefined);
-                } else {
-                    // $file:$line:content
-                    let result: Location[] = [];
-                    stdout.split('\n').forEach(line => {
-                        if (line !== '') {
-                            const ref = line.split(':', 2);
-                            const file = ref[0].replace('//', '/');
-                            const lineNumber = parseInt(ref[1], 10);
-                            const content = line.substr(ref.join(':').length + 1 - line.length);
-                            const startPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol));
-                            const endPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol) + symbol.length);
-                            result.push(Location.create(pathToFileURL(file).toString(), Range.create(startPos, endPos)));
-                        }
-                    });
-                    resolve(result);
-                }
-              });
         });
     }
 

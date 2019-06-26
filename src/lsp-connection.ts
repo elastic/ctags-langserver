@@ -26,7 +26,6 @@ export function createLspConnection(options: IServerOptions): lsp.IConnection {
     connection.onRequest(FullRequest.type, server.full.bind(server));
     connection.onDocumentSymbol(server.documentSymbol.bind(server));
     connection.onHover(server.hover.bind(server));
-    connection.onReferences(server.reference.bind(server));
 
     return connection;
 }

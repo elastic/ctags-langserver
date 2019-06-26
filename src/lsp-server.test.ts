@@ -118,20 +118,6 @@ test('test hover', async () => {
     });
 });
 
-test('test references', async () => {
-    const refs: Location[] = await lspServer.reference({
-        textDocument: TextDocumentIdentifier.create(sourceFileUrl),
-        position: Position.create(0, 4),
-        context: {
-            includeDeclaration: true
-        }
-    });
-    expect(refs).toEqual([
-        Location.create(sourceFileUrl, Range.create(Position.create(0, 4), Position.create(0, 7))),
-        Location.create(sourceFileUrl, Range.create(Position.create(9, 8), Position.create(9, 11)))
-    ])
-});
-
 test('test find belonged root path', () => {;
     const belongedRootPath = lspServer.findBelongedRootPath(sourceFilePath);
     expect(belongedRootPath).toEqual(rootPath);
