@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as grep from 'grep1';
 import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from 'nuclide-prebuilt-libs/ctags';
+import * as findRoot from 'find-root';
 import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText } from './utils';
 
 export interface IServerOptions {
@@ -299,7 +300,8 @@ export class LspServer {
         if (this.options.ctagsPath) {
             return this.options.ctagsPath;
         } else {
-            return 'ctags';
+            const packageRoot = findRoot(__filename);
+            return path.join(packageRoot, 'vendor', `ctags-${process.platform}`);
         }
     }
 

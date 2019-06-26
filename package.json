@@ -29,7 +29,8 @@
 		"nuclide-prebuilt-libs": "^0.5.7",
 		"line-column": "^1.0.2",
 		"@elastic/lsp-extension": "^0.1.1",
-		"grep1": "^0.0.5"
+		"grep1": "^0.0.5",
+		"find-root": "^1.1.0"
 	},
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
