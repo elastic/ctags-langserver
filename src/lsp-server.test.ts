@@ -114,7 +114,7 @@ test('test hover', async () => {
         position: Position.create(9, 9)
     });
     expect(hover).toEqual({
-        contents: 'int max(int foo, int bar)'
+        contents: '**test.c: 1**\n\nint max(int foo, int bar)'
     });
 });
 
