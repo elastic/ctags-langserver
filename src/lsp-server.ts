@@ -24,7 +24,7 @@ export class LspServer {
     private initializeResult: InitializeResult;
     private rootPaths: string[] = [];
     protected logger: Logger;
-    readonly tagFileName = 'tags'
+    readonly tagFileName = 'tags';
 
     constructor(private options: IServerOptions) {
         this.logger = new PrefixingLogger(options.logger, '[lspserver]');
@@ -234,17 +234,27 @@ export class LspServer {
                 } else {
                     // $file:$line:content
                     let result: Location[] = [];
-                    stdout.split('\n').forEach(line => {
-                        if (line !== '') {
-                            const ref = line.split(':', 2);
-                            const file = ref[0].replace('//', '/');
-                            const lineNumber = parseInt(ref[1], 10);
-                            const content = line.substr(ref.join(':').length + 1 - line.length);
-                            const startPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol));
-                            const endPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol) + symbol.length);
-                            result.push(Location.create(pathToFileURL(file).toString(), Range.create(startPos, endPos)));
-                        }
-                    });
+                    let totalRefs = 0;
+                    const BreakException = {};
+                    try {
+                        stdout.split('\n').forEach(line => {
+                            if (totalRefs >= 1000) {
+                                throw BreakException;
+                            }
+                            if (line !== '') {
+                                totalRefs += 1;
+                                const ref = line.split(':', 2);
+                                const file = ref[0].replace('//', '/');
+                                const lineNumber = parseInt(ref[1], 10);
+                                const content = line.substr(ref.join(':').length + 1 - line.length);
+                                const startPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol));
+                                const endPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol) + symbol.length);
+                                result.push(Location.create(pathToFileURL(file).toString(), Range.create(startPos, endPos)));
+                            }
+                        });
+                    } catch (e) {
+                        if (e !== BreakException) { throw e; }
+                    }
                     resolve(result);
                 }
               });
