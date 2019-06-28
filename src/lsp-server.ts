@@ -172,8 +172,12 @@ export class LspServer {
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 if (tags.length > 0) {
                     const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
+                    const tagFile = tag.file;
+                    const tagLineNumber = tag.lineNumber;
+                    const content = cutLineText(tag.pattern);
+                    const markedString = `**${tagFile}: ${tagLineNumber}**\n\n${content}`;
                     resolve({
-                        contents: cutLineText(tag.pattern) as MarkedString
+                        contents: markedString as MarkedString
                     });
                 }
                 resolve({
