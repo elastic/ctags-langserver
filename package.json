@@ -29,7 +29,7 @@
 		"find-root": "^1.1.0",
 		"grep1": "^0.0.5",
 		"line-column": "^1.0.2",
-		"nuclide-prebuilt-libs": "^0.5.7",
+		"nuclide-prebuilt-libs": "0.5.7",
 		"vscode-languageserver": "^5.2.1"
 	},
 	"devDependencies": {
