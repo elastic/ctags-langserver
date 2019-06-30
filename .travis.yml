@@ -1,0 +1,20 @@
+sudo: false
+dist: trusty
+branches:
+  only:
+  - master
+  - "/^v\\d+\\.\\d+\\.\\d+(-alpha\\.\\d+)?$/"
+
+compiler: clang
+language: node_js
+
+node_js:
+- '10'
+
+os:
+- linux
+- osx
+
+script:
+- set -e;
+- travis_retry yarn test
