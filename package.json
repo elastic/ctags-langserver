@@ -16,7 +16,7 @@
 		"ctags-language-server": "./lib/cli.js"
 	},
 	"scripts": {
-		"compile": "tsc -b .",
+		"compile": "tsc -b",
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
 		"prepare": "echo 'skip'",
