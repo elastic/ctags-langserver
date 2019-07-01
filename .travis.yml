@@ -15,7 +15,6 @@ os:
 - linux
 - osx
 
-install:
+script:
 - set -e;
-- yarn comile
 - travis_retry yarn test

@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
 import * as grep from 'grep1';
 import { fileURLToPath, pathToFileURL } from 'url';
-import * as ctags from 'nuclide-prebuilt-libs/ctags';
+import * as ctags from '@elastic/node-ctags/ctags';
 import * as findRoot from 'find-root';
 import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText } from './utils';
 
