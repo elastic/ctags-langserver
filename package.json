@@ -1,6 +1,6 @@
 {
 	"name": "@elastic/ctags-langserver",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "An all-languages language server built on top of ctags",
 	"author": "Elastic",
 	"license": "Apache-2.0",
