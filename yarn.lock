@@ -147,6 +147,11 @@
     vscode-languageserver "^4.2.1"
     vscode-languageserver-types "^3.10.0"
 
+"@elastic/node-ctags@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@elastic/node-ctags/-/node-ctags-1.0.2.tgz#447d7694a5598f9413fe2b6f356d56f64f612dfd"
+  integrity sha512-EHhJ0NPlCvYy+gbzBMU4/Z/55hftfdwlAG8JwOy7g0ITmH6rFPanEnzg1WL3/L+pp8OlYHyvDLwmyg0+06y8LQ==
+
 "@jest/console@^24.7.1":
   version "24.7.1"
   resolved "https://registry.yarnpkg.com/@jest/console/-/console-24.7.1.tgz#32a9e42535a97aedfe037e725bd67e954b459545"
@@ -2522,11 +2527,6 @@ npmlog@^4.0.2:
     console-control-strings "~1.1.0"
     gauge "~2.7.3"
     set-blocking "~2.0.0"
-
-nuclide-prebuilt-libs@^0.5.7:
-  version "0.5.7"
-  resolved "https://registry.yarnpkg.com/nuclide-prebuilt-libs/-/nuclide-prebuilt-libs-0.5.7.tgz#6569d2b8c9fcfb94ce00890f5afb62a687c74852"
-  integrity sha512-qur7A1K9+HZkGYs8mYdmCHWRjGZnx92/TR5TrkfkCKkyptjHt4RB1hFgeCG4cxN4mi3axbQdVeTY3i1YSn5XsQ==
 
 number-is-nan@^1.0.0:
   version "1.0.1"
