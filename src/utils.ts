@@ -1,4 +1,7 @@
 import * as lineColumn from 'line-column';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import * as minimatch from 'minimatch';
 
 const WORD_CHAR: RegExp = /(\w)/;
 
@@ -58,4 +61,48 @@ function strictIndexOf(wholeStr: string, subStr: string): number {
         return woff;
     } while (spos < wholeStr.length);
     return -1;
+}
+
+export async function grep(symbolName: string, root: string, include: string, limit?: number): Promise<Match[]> {
+    let matchNumber = 0;
+    const match: Match[] = [];
+    const files = await fs.readdir(root);
+    for (const file of files) {
+        const child = path.resolve(root, file);
+        const stat = await fs.stat(child);
+        if (stat.isDirectory()) {
+            let childMatch: Match[];
+            if (limit) {
+                childMatch = await grep(symbolName, child, include, limit - matchNumber);
+            } else {
+                childMatch = await grep(symbolName, child, include);
+            }
+            matchNumber += match.push(...childMatch);
+        } else if (minimatch(file, include)) {
+            let lineNum: number = 0;
+            const contents = fs.readFileSync(child, 'utf8');
+            const r = new RegExp(symbolName);
+            for (const line of contents.split('\n')) {
+                if (limit && matchNumber > limit) {
+                    break;
+                }
+                if (r.test(line)) {
+                    match.push({
+                        path: child,
+                        text: line,
+                        line: lineNum
+                    });
+                    matchNumber ++;
+                }
+                lineNum ++;
+            }
+        }
+    }
+    return match;
+}
+
+interface Match {
+    path: string;
+    text: string;
+    line: number;
 }

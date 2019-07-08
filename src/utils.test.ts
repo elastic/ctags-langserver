@@ -1,4 +1,6 @@
-import { codeSelect, getOffsetOfLineAndCharacter, bestIndexOfSymbol, cutLineText } from "./utils";
+import { codeSelect, getOffsetOfLineAndCharacter, bestIndexOfSymbol, cutLineText, grep } from "./utils";
+import * as fs from 'fs';
+import * as path from 'path';
 
 const content = "int max(int foo, int bar)\n" +
                     "{\n" +
@@ -36,4 +38,25 @@ test("test remove unnecessary parts in hover text", () => {
     const before = '/^#define ASSERT_STREQ(/;';
     const after = cutLineText(before);
     expect(after).toEqual('#define ASSERT_STREQ(');
+});
+
+test("test grep", async () => {
+    const rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    const sourceFilePath = path.resolve(rootPath, 'test.c');
+    const dir1Path = path.resolve(rootPath, 'dir1');
+    fs.mkdirSync(dir1Path);
+    const dir1SourcePath = path.resolve(dir1Path, 'test.c');
+    fs.writeFileSync(sourceFilePath, content);
+    fs.writeFileSync(dir1SourcePath, content);
+    const match = await grep('return', rootPath, '*.c');
+    expect(match).toEqual([{
+        path: dir1SourcePath,
+        text: ' return result;',
+        line: 7
+    },
+    {
+        path: sourceFilePath,
+        text: ' return result;',
+        line: 7
+    }])
 });

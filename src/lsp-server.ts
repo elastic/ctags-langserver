@@ -7,11 +7,10 @@ import { Logger, PrefixingLogger } from './logger';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
-import * as grep from 'grep1';
 import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from '@elastic/node-ctags/ctags';
 import * as findRoot from 'find-root';
-import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText } from './utils';
+import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep } from './utils';
 
 export interface IServerOptions {
     logger: Logger;
@@ -225,40 +224,15 @@ export class LspServer {
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
         const language: string = path.extname(fileName);
-        return new Promise<Location[]>(resolve => {
-            // limit the serach scope within same file extension
-            grep(['-n', symbol, '-R', `--include=*${language}`, rootPath], function(err, stdout: string, stderr) {
-                if (err || stderr) {
-                    this.logger.error(err);
-                    resolve(undefined);
-                } else {
-                    // $file:$line:content
-                    let result: Location[] = [];
-                    let totalRefs = 0;
-                    const BreakException = {};
-                    try {
-                        stdout.split('\n').forEach(line => {
-                            if (totalRefs >= 1000) {
-                                throw BreakException;
-                            }
-                            if (line !== '') {
-                                totalRefs += 1;
-                                const ref = line.split(':', 2);
-                                const file = ref[0].replace('//', '/');
-                                const lineNumber = parseInt(ref[1], 10);
-                                const content = line.substr(ref.join(':').length + 1 - line.length);
-                                const startPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol));
-                                const endPos = Position.create(lineNumber - 1, bestIndexOfSymbol(content, symbol) + symbol.length);
-                                result.push(Location.create(pathToFileURL(file).toString(), Range.create(startPos, endPos)));
-                            }
-                        });
-                    } catch (e) {
-                        if (e !== BreakException) { throw e; }
-                    }
-                    resolve(result);
-                }
-              });
+        let result: Location[] = [];
+        // limit the serach scope within same file extension
+        // TODO(pcxu): add map to indicate what file extensions a specific language supports
+        (await grep(symbol, rootPath, `*${language}`, 1000)).forEach(match => {
+            const startPos = Position.create(match.line, bestIndexOfSymbol(match.text, symbol));
+            const endPos = Position.create(match.line, bestIndexOfSymbol(match.text, symbol) + symbol.length);
+            result.push(Location.create(pathToFileURL(match.path).toString(), Range.create(startPos, endPos)));
         });
+        return result;
     }
 
     public findBelongedRootPath(filePath: string): string {
