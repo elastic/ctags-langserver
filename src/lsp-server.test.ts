@@ -132,7 +132,7 @@ test('test references', async () => {
     ])
 });
 
-test('test find belonged root path', () => {;
+test('test find belonged root path', () => {
     const belongedRootPath = lspServer.findBelongedRootPath(sourceFilePath);
     expect(belongedRootPath).toEqual(rootPath);
 });

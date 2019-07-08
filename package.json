@@ -25,9 +25,10 @@
 		"@elastic/node-ctags": "1.0.2",
 		"commander": "^2.11.0",
 		"find-root": "^1.1.0",
-		"grep1": "^0.0.5",
 		"line-column": "^1.0.2",
-		"vscode-languageserver": "^5.2.1"
+		"vscode-languageserver": "^5.2.1",
+		"mz": "^2.7.0",
+		"minimatch": "3.0.4"
 	},
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
@@ -37,6 +38,8 @@
 		"ts-jest": "^24.0.2",
 		"ts-node": "7.0.1",
 		"tslint": "^5.16.0",
-		"typescript": "^3.4.5"
+		"typescript": "^3.4.5",
+		"@types/mz": "0.0.32",
+		"@types/minimatch": "3.0.3"
 	}
 }
