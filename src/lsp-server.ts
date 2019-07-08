@@ -277,7 +277,7 @@ export class LspServer {
         // 1. if line number equal or less than given line
         // 2. absolute distance between two lines
         // 3. if in the same file
-        const inFileTags = tags.filter(tag => tag.file = fileName);
+        const inFileTags = tags.filter(tag => tag.file === fileName);
         if (inFileTags.length !== 0) {
             inFileTags.sort(function(l, r) {
                 return (Math.abs(l.lineNumber - line) - Math.abs(r.lineNumber - line));
