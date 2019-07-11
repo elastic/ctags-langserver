@@ -270,7 +270,7 @@ export class LspServer {
     private runCtags(rootPath: string) {
         const ctagsPath = this.findCtagsPath();
         try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath });
+            execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath, stdio: 'pipe' });
         } catch (err) {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
             this.logger.error(`${err.stderr}`);
