@@ -18,7 +18,7 @@
 		"test": "jest",
 		"prepare": "echo 'skip'",
 		"clean": "rimraf lib",
-		"lint": "tslint -c ../tslint.json --project ."
+		"lint": "tslint -c ./tslint.json --project ."
 	},
 	"dependencies": {
 		"@elastic/lsp-extension": "^0.1.1",

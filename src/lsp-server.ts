@@ -77,7 +77,7 @@ export class LspServer {
         return new Promise<SymbolInformation[]>(resolve => {
             let results: SymbolInformation[] = [];
             stream.on('data', (tags) => {
-                const definitions = tags.filter(tag => tag.file === relativePath);
+                const definitions = tags.filter(tag => path.normalize(tag.file) === path.normalize(relativePath));
                 for (let def of definitions) {
                     let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
@@ -141,7 +141,8 @@ export class LspServer {
         this.logger.log('full', params);
         const symbols: SymbolInformation[] = await this.documentSymbol({ textDocument: params.textDocument});
         const detailSymbols: DetailSymbolInformation[] = symbols.map(symbol => ({
-            symbolInformation: symbol
+            symbolInformation: symbol,
+            qname: symbol.name
         }));
         if (params.reference) {
             // TODO(pcxu): add references
@@ -171,7 +172,7 @@ export class LspServer {
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 if (tags.length > 0) {
                     const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
-                    const tagFile = tag.file;
+                    const tagFile = path.normalize(tag.file);
                     const tagLineNumber = tag.lineNumber;
                     const content = cutLineText(tag.pattern);
                     const markedString = `**${tagFile}: ${tagLineNumber}**\n\n${content}`;
@@ -251,7 +252,7 @@ export class LspServer {
         // 1. if line number equal or less than given line
         // 2. absolute distance between two lines
         // 3. if in the same file
-        const inFileTags = tags.filter(tag => tag.file === fileName);
+        const inFileTags = tags.filter(tag => path.normalize(tag.file) === path.normalize(fileName));
         if (inFileTags.length !== 0) {
             inFileTags.sort(function(l, r) {
                 return (Math.abs(l.lineNumber - line) - Math.abs(r.lineNumber - line));

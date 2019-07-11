@@ -86,14 +86,16 @@ test('test full', async () => {
                 kind: SymbolKind.Variable,
                 location: Location.create(sourceFileUrl, Range.create(Position.create(9, 0), Position.create(9, 0))),
                 containerName: 'test.c'
-        },
+            },
+            qname: 'a'
         }, {
             symbolInformation: {
                 name: 'max',
                 kind: SymbolKind.Function,
                 location: Location.create(sourceFileUrl, Range.create(Position.create(0, 0), Position.create(0, 0))),
                 containerName: 'test.c'
-            }
+            },
+            qname: 'max'
         }]
     });
 });
