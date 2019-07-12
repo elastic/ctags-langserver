@@ -98,6 +98,9 @@ export class LspServer {
                         case 'namespace':
                             symbolInformation.kind = SymbolKind.Namespace;
                             break;
+                        case 'package':
+                            symbolInformation.kind = SymbolKind.Package;
+                            break;
                         case 'variable':
                             symbolInformation.kind = SymbolKind.Variable;
                             break;
@@ -123,7 +126,13 @@ export class LspServer {
                             symbolInformation.kind = SymbolKind.EnumMember;
                             break;
                         case 'member':
-                            symbolInformation.kind = SymbolKind.Method;
+                            symbolInformation.kind = SymbolKind.Field;
+                            break;
+                        case 'typedef':
+                            symbolInformation.kind = SymbolKind.Interface;
+                            break;
+                        case 'macro':
+                            symbolInformation.kind = SymbolKind.Constant;
                             break;
                         default:
                             break;
