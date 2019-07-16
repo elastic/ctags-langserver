@@ -8,8 +8,10 @@ import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+// @ts-ignore
 import * as ctags from '@elastic/node-ctags/ctags';
-import * as findRoot from 'find-root';
+// @ts-ignore
+import findRoot from 'find-root';
 import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep } from './utils';
 
 export interface IServerOptions {
@@ -76,7 +78,9 @@ export class LspServer {
         const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
         return new Promise<SymbolInformation[]>(resolve => {
             let results: SymbolInformation[] = [];
+            // @ts-ignore
             stream.on('data', (tags) => {
+                // @ts-ignore
                 const definitions = tags.filter(tag => path.normalize(tag.file) === path.normalize(relativePath));
                 for (let def of definitions) {
                     let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
@@ -178,6 +182,7 @@ export class LspServer {
                     contents: '' as MarkedString
                 });
             }
+            // @ts-ignore
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 if (tags.length > 0) {
                     const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
@@ -210,6 +215,7 @@ export class LspServer {
             if (symbol === '') {
                 resolve(undefined);
             }
+            // @ts-ignore
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
                 if (tags.length > 0) {
                     const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);

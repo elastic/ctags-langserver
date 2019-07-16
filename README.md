@@ -20,7 +20,7 @@ npm install -g @elastic/ctags-langserver
 # Running the language server
 
 ```
-node @elastic/ctags-langserver/lib/cli.js --socket=2092
+yarn start
 ```
 
 
@@ -30,8 +30,7 @@ If you want to file a issue, file it in: https://github.com/elastic/code/issues
 ### Build
 
 ```sh
-yarn
-yarn compile
+yarn build
 ```
 
 ## Test

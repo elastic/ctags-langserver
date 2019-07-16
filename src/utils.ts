@@ -1,12 +1,13 @@
-import * as lineColumn from 'line-column';
 import * as fs from 'mz/fs';
 import * as path from 'path';
-import * as minimatch from 'minimatch';
+import minimatch from 'minimatch';
+// @ts-ignore
+import LineColumnFinder from 'line-column';
 
 const WORD_CHAR: RegExp = /(\w)/;
 
 export function getOffsetOfLineAndCharacter(sourceFile: string, line: number, character: number): number {
-    return lineColumn(sourceFile).toIndex(line, character);
+    return LineColumnFinder(sourceFile).toIndex(line, character);
 }
 
 export function codeSelect(source: string, offset: number): string {

@@ -53,19 +53,23 @@ export class ConsoleLogger implements Logger {
 
     constructor(private isLogEnabled?: boolean) {}
 
+    // @ts-ignore
     private toStrings(...arg): string[] {
         return (arg.map(a => JSON.stringify(a, null, 2)));
     }
-
+    // @ts-ignore
     error(...arg) {
         console.error(...this.toStrings(arg));
     }
+    // @ts-ignore
     warn(...arg) {
         console.warn(...this.toStrings(arg));
     }
+    // @ts-ignore
     info(...arg) {
         console.info(...this.toStrings(arg));
     }
+    // @ts-ignore
     log(...arg) {
         if (this.isLogEnabled) {
             console.log(...this.toStrings(arg));
