@@ -105,6 +105,9 @@ export class LspServer {
                         case 'package':
                             symbolInformation.kind = SymbolKind.Package;
                             break;
+                        case 'module':
+                            symbolInformation.kind = SymbolKind.Module;
+                            break;
                         case 'variable':
                             symbolInformation.kind = SymbolKind.Variable;
                             break;
