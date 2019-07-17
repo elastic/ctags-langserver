@@ -96,6 +96,10 @@ export class LspServer {
                             symbolInformation.containerName = def.fields.function;
                         } else if (def.fields.enum) {
                             symbolInformation.containerName = def.fields.enum;
+                        } else if (def.fields.namespace) {
+                            symbolInformation.containerName = def.fields.namespace;
+                        } else if (def.fields.module) {
+                            symbolInformation.containerName = def.fields.module;
                         }
                     }
                     switch (def.kind) {
