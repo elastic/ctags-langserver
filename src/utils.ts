@@ -3,6 +3,7 @@ import * as path from 'path';
 import minimatch from 'minimatch';
 // @ts-ignore
 import LineColumnFinder from 'line-column';
+import { DocumentSymbol, SymbolInformation } from 'vscode-languageserver';
 
 const WORD_CHAR: RegExp = /(\w)/;
 
@@ -100,6 +101,38 @@ export async function grep(symbolName: string, root: string, include: string, li
         }
     }
     return match;
+}
+
+interface DocumentSymbolWithParent extends DocumentSymbol {
+    parent?: string
+}
+
+export async function toHierarchicalDocumentSymbol(flattenedSymbolInformation: SymbolInformation[], sourceFile: string): Promise<DocumentSymbol[]> {
+    let map = new Map();
+    let roots: DocumentSymbol[] = [];
+    let tmpResult: DocumentSymbolWithParent[] = [];
+    let i = 0;
+    flattenedSymbolInformation.forEach(symbol => {
+        const documentSymbolwithParent: DocumentSymbolWithParent = {
+            name: symbol.containerName === sourceFile ? symbol.name : `${symbol.containerName}.${symbol.name}`,
+            kind: symbol.kind,
+            range: symbol.location.range,
+            selectionRange: symbol.location.range,
+            children: [],
+            parent: symbol.containerName
+        }
+        map.set(documentSymbolwithParent.name, i ++);
+        tmpResult.push(documentSymbolwithParent);
+    });
+    tmpResult.forEach(symbol => {
+        if (symbol.parent !== sourceFile) {
+            tmpResult[map.get(symbol.parent)].children.push(symbol);
+        } else {
+            roots.push(symbol);
+        }
+        delete symbol.parent;
+    });
+    return roots;
 }
 
 interface Match {

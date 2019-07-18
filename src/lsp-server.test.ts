@@ -1,4 +1,4 @@
-import { SymbolKind, Range, Position, SymbolInformation, Hover, Location, TextDocumentIdentifier } from 'vscode-languageserver-protocol';
+import { SymbolKind, Range, Position, Hover, Location, TextDocumentIdentifier, DocumentSymbol } from 'vscode-languageserver-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
@@ -57,19 +57,21 @@ test('test didChangeWorkspaceFolders', () => {
 })
 
 test('test documentSymbol', async () => {
-    const symbols: SymbolInformation[] = await lspServer.documentSymbol({
+    const symbols: DocumentSymbol[] = await lspServer.documentSymbol({
         textDocument: TextDocumentIdentifier.create(sourceFileUrl)
     });
     expect(symbols).toEqual([{
         name: 'a',
         kind: SymbolKind.Variable,
-        location: Location.create(sourceFileUrl, Range.create(Position.create(9, 0), Position.create(9, 0))),
-        containerName: 'test.c'
+        range: Range.create(Position.create(9, 0), Position.create(9, 0)),
+        selectionRange: Range.create(Position.create(9, 0), Position.create(9, 0)),
+        children: []
     }, {
         name: 'max',
         kind: SymbolKind.Function,
-        location: Location.create(sourceFileUrl, Range.create(Position.create(0, 0), Position.create(0, 0))),
-        containerName: 'test.c'
+        range: Range.create(Position.create(0, 0), Position.create(0, 0)),
+        selectionRange: Range.create(Position.create(0, 0), Position.create(0, 0)),
+        children: []
     }])
 });
 
