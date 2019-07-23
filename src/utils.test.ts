@@ -1,6 +1,8 @@
-import { codeSelect, getOffsetOfLineAndCharacter, bestIndexOfSymbol, cutLineText, grep } from "./utils";
+import { codeSelect, getOffsetOfLineAndCharacter, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from "./utils";
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
+import { SymbolInformation } from "vscode-languageserver";
 
 const content = "int max(int foo, int bar)\n" +
                     "{\n" +
@@ -41,7 +43,7 @@ test("test remove unnecessary parts in hover text", () => {
 });
 
 test("test grep", async () => {
-    const rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    const rootPath = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ctags-langserver'));
     const sourceFilePath = path.resolve(rootPath, 'test.c');
     const dir1Path = path.resolve(rootPath, 'dir1');
     fs.mkdirSync(dir1Path);
@@ -59,4 +61,21 @@ test("test grep", async () => {
         text: ' return result;',
         line: 7
     }])
+});
+
+const data = '[{"name":"API","kind":2,"location":{"uri":"","range":{"start":{"line":18,"character":0},"end":{"line":18,"character":0}}}' +
+',"containerName":"Elasticsearch"},{"name":"Elasticsearch","kind":2,"location":{"uri":"","range":{"start":{"line":17,"character":0},"end"' +
+':{"line":17,"character":0}}},"containerName":"elasticsearch-api/lib/elasticsearch/api/utils.rb"},{"name":"Utils","kind":2,"location":{"uri"' +
+':"","range":{"start":{"line":22,"character":0},"end":{"line":22,"character":0}}},"containerName":"Elasticsearch.API"},{"name":"__bulkify","kind":6,' +
+'"location":{"uri":"","range":{"start":{"line":99,"character":0},"end":{"line":99,"character":0}}},"containerName":"Elasticsearch.API.Utils"}]';
+const expectedData = '[{"name":"Elasticsearch","kind":2,"range":{"start":{"line":17,"character":0},"end":{"line":17,"character":0}},"selectionRange":' +
+'{"start":{"line":17,"character":0},"end":{"line":17,"character":0}},"children":[{"name":"Elasticsearch.API","kind":2,"range":{"start":{"line":18,"character":' +
+'0},"end":{"line":18,"character":0}},"selectionRange":{"start":{"line":18,"character":0},"end":{"line":18,"character":0}},"children":[{"name":"Elasticsearch.API.' +
+'Utils","kind":2,"range":{"start":{"line":22,"character":0},"end":{"line":22,"character":0}},"selectionRange":{"start":{"line":22,"' +
+'character":0},"end":{"line":22,"character":0}},"children":[{"name":"Elasticsearch.API.Utils.__bulkify","kind":6,"range":{"start":{"line":99,"character":0},' +
+'"end":{"line":99,"character":0}},"selectionRange":{"start":{"line":99,"character":0},"end":{"line":99,"character":0}},"children":[]}]}]}]}]'
+
+test("test toHierarchicalDocumentSymbol", async () => {
+    const symbolInformation: SymbolInformation[] = JSON.parse(data);
+    expect(JSON.stringify(await toHierarchicalDocumentSymbol(symbolInformation, "elasticsearch-api/lib/elasticsearch/api/utils.rb"))).toEqual(expectedData);
 });

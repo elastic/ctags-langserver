@@ -1,6 +1,6 @@
 import { InitializeParams, InitializeResult,
     DidChangeWorkspaceFoldersParams, DocumentSymbolParams,
-    SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams} from 'vscode-languageserver-protocol';
+    SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams, DocumentSymbol} from 'vscode-languageserver-protocol';
 import { SymbolLocator, FullParams, Full, DetailSymbolInformation } from '@elastic/lsp-extension';
 
 import { Logger, PrefixingLogger } from './logger';
@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from '@elastic/node-ctags/ctags';
 // @ts-ignore
 import findRoot from 'find-root';
-import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep } from './utils';
+import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from './utils';
 
 export interface IServerOptions {
     logger: Logger;
@@ -67,7 +67,7 @@ export class LspServer {
         });
     }
 
-    async documentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
+    async documentSymbol(params: DocumentSymbolParams): Promise<DocumentSymbol[]> {
         this.logger.log('documentSymbol', params);
         const filePath = fileURLToPath(params.textDocument.uri);
         const rootPath = this.findBelongedRootPath(filePath);
@@ -75,91 +75,12 @@ export class LspServer {
             return [];
         }
         const relativePath = path.relative(rootPath, filePath);
-        const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
-        return new Promise<SymbolInformation[]>(resolve => {
-            let results: SymbolInformation[] = [];
-            // @ts-ignore
-            stream.on('data', (tags) => {
-                // @ts-ignore
-                const definitions = tags.filter(tag => path.normalize(tag.file) === path.normalize(relativePath));
-                for (let def of definitions) {
-                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
-                        Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), params.textDocument.uri, relativePath);
-                    if (def.fields !== undefined) {
-                        if (def.fields.struct) {
-                            symbolInformation.containerName = def.fields.struct;
-                        } else if (def.fields.class) {
-                            symbolInformation.containerName = def.fields.class;
-                        }  else if (def.fields.interface) {
-                            symbolInformation.containerName = def.fields.interface;
-                        } else if (def.fields.function) {
-                            symbolInformation.containerName = def.fields.function;
-                        } else if (def.fields.enum) {
-                            symbolInformation.containerName = def.fields.enum;
-                        } else if (def.fields.namespace) {
-                            symbolInformation.containerName = def.fields.namespace;
-                        } else if (def.fields.module) {
-                            symbolInformation.containerName = def.fields.module;
-                        }
-                    }
-                    switch (def.kind) {
-                        case 'namespace':
-                            symbolInformation.kind = SymbolKind.Namespace;
-                            break;
-                        case 'package':
-                            symbolInformation.kind = SymbolKind.Package;
-                            break;
-                        case 'module':
-                            symbolInformation.kind = SymbolKind.Module;
-                            break;
-                        case 'variable':
-                            symbolInformation.kind = SymbolKind.Variable;
-                            break;
-                        case 'function':
-                            symbolInformation.kind = SymbolKind.Function;
-                            break;
-                        case 'class':
-                            symbolInformation.kind = SymbolKind.Class;
-                            break;
-                        case 'field':
-                            symbolInformation.kind = SymbolKind.Field;
-                            break;
-                        case 'method':
-                            symbolInformation.kind = SymbolKind.Method;
-                            break;
-                        case 'struct':
-                            symbolInformation.kind = SymbolKind.Struct;
-                            break;
-                        case 'enum':
-                            symbolInformation.kind = SymbolKind.Enum;
-                            break;
-                        case 'enumerator':
-                            symbolInformation.kind = SymbolKind.EnumMember;
-                            break;
-                        case 'member':
-                            symbolInformation.kind = SymbolKind.Field;
-                            break;
-                        case 'typedef':
-                            symbolInformation.kind = SymbolKind.Interface;
-                            break;
-                        case 'macro':
-                            symbolInformation.kind = SymbolKind.Constant;
-                            break;
-                        default:
-                            break;
-                    }
-                    results.push(symbolInformation);
-                }
-            });
-            stream.on('end', () => {
-                resolve(results);
-            });
-        });
+        return this.collectChildren(params.textDocument.uri).then(children => toHierarchicalDocumentSymbol(children, relativePath));
     }
 
     async full(params: FullParams): Promise<Full> {
         this.logger.log('full', params);
-        const symbols: SymbolInformation[] = await this.documentSymbol({ textDocument: params.textDocument});
+        const symbols: SymbolInformation[] = await this.collectChildren(params.textDocument.uri);
         const detailSymbols: DetailSymbolInformation[] = symbols.map(symbol => ({
             symbolInformation: symbol,
             qname: symbol.name
@@ -267,6 +188,95 @@ export class LspServer {
             return '';
         }
         return rootPath;
+    }
+
+    private async collectChildren(unitURI: string): Promise<SymbolInformation[]> {
+        const filePath = fileURLToPath(unitURI);
+        const rootPath = this.findBelongedRootPath(filePath);
+        if (!rootPath) {
+            return [];
+        }
+        const relativePath = path.relative(rootPath, filePath);
+        const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
+        return new Promise<SymbolInformation[]>(resolve => {
+            let results: SymbolInformation[] = [];
+            // @ts-ignore
+            stream.on('data', (tags) => {
+                // @ts-ignore
+                const definitions = tags.filter(tag => path.normalize(tag.file) === path.normalize(relativePath));
+                for (let def of definitions) {
+                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
+                        Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), unitURI, relativePath);
+                    if (def.fields !== undefined) {
+                        if (def.fields.struct) {
+                            symbolInformation.containerName = def.fields.struct;
+                        } else if (def.fields.class) {
+                            symbolInformation.containerName = def.fields.class;
+                        }  else if (def.fields.interface) {
+                            symbolInformation.containerName = def.fields.interface;
+                        } else if (def.fields.function) {
+                            symbolInformation.containerName = def.fields.function;
+                        } else if (def.fields.enum) {
+                            symbolInformation.containerName = def.fields.enum;
+                        } else if (def.fields.namespace) {
+                            symbolInformation.containerName = def.fields.namespace;
+                        } else if (def.fields.module) {
+                            symbolInformation.containerName = def.fields.module;
+                        }
+                    }
+                    switch (def.kind) {
+                        case 'namespace':
+                            symbolInformation.kind = SymbolKind.Namespace;
+                            break;
+                        case 'package':
+                            symbolInformation.kind = SymbolKind.Package;
+                            break;
+                        case 'module':
+                            symbolInformation.kind = SymbolKind.Module;
+                            break;
+                        case 'variable':
+                            symbolInformation.kind = SymbolKind.Variable;
+                            break;
+                        case 'function':
+                            symbolInformation.kind = SymbolKind.Function;
+                            break;
+                        case 'class':
+                            symbolInformation.kind = SymbolKind.Class;
+                            break;
+                        case 'field':
+                            symbolInformation.kind = SymbolKind.Field;
+                            break;
+                        case 'method':
+                            symbolInformation.kind = SymbolKind.Method;
+                            break;
+                        case 'struct':
+                            symbolInformation.kind = SymbolKind.Struct;
+                            break;
+                        case 'enum':
+                            symbolInformation.kind = SymbolKind.Enum;
+                            break;
+                        case 'enumerator':
+                            symbolInformation.kind = SymbolKind.EnumMember;
+                            break;
+                        case 'member':
+                            symbolInformation.kind = SymbolKind.Field;
+                            break;
+                        case 'typedef':
+                            symbolInformation.kind = SymbolKind.Interface;
+                            break;
+                        case 'macro':
+                            symbolInformation.kind = SymbolKind.Constant;
+                            break;
+                        default:
+                            break;
+                    }
+                    results.push(symbolInformation);
+                }
+            });
+            stream.on('end', () => {
+                resolve(results);
+            });
+        });
     }
 
     private findClosestTag(tags: any[], fileName: string, line: number) {
