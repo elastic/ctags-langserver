@@ -1,6 +1,7 @@
 import { SymbolKind, Range, Position, Hover, Location, TextDocumentIdentifier, DocumentSymbol } from 'vscode-languageserver-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { pathToFileURL } from 'url';
 import { LspServer } from './lsp-server';
 import { ConsoleLogger } from './logger';
@@ -22,7 +23,7 @@ let sourceFileUrl: string;
 let rootPath: string;
 
 beforeAll(async () => {
-    rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    rootPath = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ctags-langserver'));
     sourceFilePath = path.resolve(rootPath, 'test.c');
     sourceFileUrl = pathToFileURL(sourceFilePath).toString();
     fs.writeFileSync(sourceFilePath, content);
@@ -39,7 +40,7 @@ beforeAll(async () => {
 });
 
 test('test didChangeWorkspaceFolders', () => {
-    const addedRootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    const addedRootPath = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ctags-langserver'));
     const addedSourceFilePath = path.resolve(addedRootPath, 'test.c');
     fs.writeFileSync(addedSourceFilePath, content);
     lspServer.didChangeWorkspaceFolders({

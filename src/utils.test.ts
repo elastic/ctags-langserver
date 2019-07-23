@@ -1,6 +1,7 @@
 import { codeSelect, getOffsetOfLineAndCharacter, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from "./utils";
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { SymbolInformation } from "vscode-languageserver";
 
 const content = "int max(int foo, int bar)\n" +
@@ -42,7 +43,7 @@ test("test remove unnecessary parts in hover text", () => {
 });
 
 test("test grep", async () => {
-    const rootPath = fs.mkdtempSync('/tmp/ctags-langserver');
+    const rootPath = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ctags-langserver'));
     const sourceFilePath = path.resolve(rootPath, 'test.c');
     const dir1Path = path.resolve(rootPath, 'dir1');
     fs.mkdirSync(dir1Path);
