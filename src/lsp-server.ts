@@ -1,6 +1,7 @@
 import { InitializeParams, InitializeResult,
     DidChangeWorkspaceFoldersParams, DocumentSymbolParams,
-    SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams, Hover, MarkedString, Location, ReferenceParams, DocumentSymbol} from 'vscode-languageserver-protocol';
+    SymbolKind, Range, Position, SymbolInformation, TextDocumentPositionParams,
+    Hover, MarkedString, Location, ReferenceParams, DocumentSymbol} from 'vscode-languageserver-protocol';
 import { SymbolLocator, FullParams, Full, DetailSymbolInformation } from '@elastic/lsp-extension';
 
 import { Logger, PrefixingLogger } from './logger';
