@@ -69,10 +69,10 @@ const data = '[{"name":"API","kind":2,"location":{"uri":"","range":{"start":{"li
 ':"","range":{"start":{"line":22,"character":0},"end":{"line":22,"character":0}}},"containerName":"Elasticsearch.API"},{"name":"__bulkify","kind":6,' +
 '"location":{"uri":"","range":{"start":{"line":99,"character":0},"end":{"line":99,"character":0}}},"containerName":"Elasticsearch.API.Utils"}]';
 const expectedData = '[{"name":"Elasticsearch","kind":2,"range":{"start":{"line":17,"character":0},"end":{"line":17,"character":0}},"selectionRange":' +
-'{"start":{"line":17,"character":0},"end":{"line":17,"character":0}},"children":[{"name":"Elasticsearch.API","kind":2,"range":{"start":{"line":18,"character":' +
-'0},"end":{"line":18,"character":0}},"selectionRange":{"start":{"line":18,"character":0},"end":{"line":18,"character":0}},"children":[{"name":"Elasticsearch.API.' +
-'Utils","kind":2,"range":{"start":{"line":22,"character":0},"end":{"line":22,"character":0}},"selectionRange":{"start":{"line":22,"' +
-'character":0},"end":{"line":22,"character":0}},"children":[{"name":"Elasticsearch.API.Utils.__bulkify","kind":6,"range":{"start":{"line":99,"character":0},' +
+'{"start":{"line":17,"character":0},"end":{"line":17,"character":0}},"children":[{"name":"API","kind":2,"range":{"start":{"line":18,"character":' +
+'0},"end":{"line":18,"character":0}},"selectionRange":{"start":{"line":18,"character":0},"end":{"line":18,"character":0}},"children":[{"name":' +
+'"Utils","kind":2,"range":{"start":{"line":22,"character":0},"end":{"line":22,"character":0}},"selectionRange":{"start":{"line":22,"' +
+'character":0},"end":{"line":22,"character":0}},"children":[{"name":"__bulkify","kind":6,"range":{"start":{"line":99,"character":0},' +
 '"end":{"line":99,"character":0}},"selectionRange":{"start":{"line":99,"character":0},"end":{"line":99,"character":0}},"children":[]}]}]}]}]'
 
 test("test toHierarchicalDocumentSymbol", async () => {

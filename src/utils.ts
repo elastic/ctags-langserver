@@ -119,14 +119,21 @@ export async function toHierarchicalDocumentSymbol(flattenedSymbolInformation: S
             range: symbol.location.range,
             selectionRange: symbol.location.range,
             children: [],
-            parent: symbol.containerName
+            // for c/c++ parser of ctags, it constructs enum in struct as anonymous like 'structName::__anon{HASH}'
+            parent: symbol.containerName.includes('::') ? symbol.containerName.replace('::', '.') : symbol.containerName
         }
         map.set(documentSymbolwithParent.name, i ++);
         tmpResult.push(documentSymbolwithParent);
     });
     tmpResult.forEach(symbol => {
         if (symbol.parent !== sourceFile) {
-            tmpResult[map.get(symbol.parent)].children.push(symbol);
+            if (tmpResult[map.get(symbol.parent)] !== undefined) {
+                // from qualified name to simple name
+                if (symbol.name.includes('.')) {
+                    symbol.name = symbol.name.substr(symbol.name.lastIndexOf('.') + 1);
+                }
+                tmpResult[map.get(symbol.parent)].children.push(symbol);
+            }
         } else {
             roots.push(symbol);
         }
