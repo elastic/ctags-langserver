@@ -4,15 +4,22 @@ import { DidChangeWorkspaceFoldersNotification } from 'vscode-languageserver';
 import { LspClientLogger } from './logger';
 import { LspClientImpl } from './lsp-client';
 import { EDefinitionRequest, FullRequest } from './lsp-protocol.edefinition.proposed';
+import { createServerSocketTransport } from 'vscode-languageserver-protocol';
 
 export interface IServerOptions {
     ctagsPath: string;
     showMessageLevel: lsp.MessageType
+    socketPort?: number;
 }
 
 export function createLspConnection(options: IServerOptions): lsp.IConnection {
-
-    const connection = lsp.createConnection();
+    let connection: lsp.IConnection;
+    if (options.socketPort !== undefined) {
+        const [reader, writer] = createServerSocketTransport(this.port);
+        connection = lsp.createConnection(reader, writer);
+    } else {
+        connection = lsp.createConnection();
+    }
     const lspClient = new LspClientImpl(connection);
     const logger = new LspClientLogger(lspClient, options.showMessageLevel);
     const server: LspServer = new LspServer({
