@@ -104,13 +104,13 @@ test('test full', async () => {
 });
 
 test('test definition', async () => {
-    const def: SymbolLocator = await lspServer.eDefinition({
+    const def: SymbolLocator[] = await lspServer.eDefinition({
         textDocument: TextDocumentIdentifier.create(sourceFileUrl),
         position: Position.create(9, 9)
-    })
-    expect(def).toEqual({
+    });
+    expect(def).toEqual([{
         location: Location.create(sourceFileUrl, Range.create(Position.create(0, 0), Position.create(0, 0)))
-    })
+    }]);
 });
 
 test('test hover', async () => {

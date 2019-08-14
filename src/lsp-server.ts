@@ -130,30 +130,34 @@ export class LspServer {
         });
     }
 
-    async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator> {
+    async eDefinition(params: TextDocumentPositionParams): Promise<SymbolLocator[]> {
         this.logger.log('edefinition', params);
         const fileName: string = fileURLToPath(params.textDocument.uri);
         const rootPath = this.findBelongedRootPath(fileName);
         if (!rootPath) {
-            return {};
+            return [];
         }
         const contents = readFileSync(fileName, 'utf8');
         const offset: number = getOffsetOfLineAndCharacter(contents, params.position.line + 1, params.position.character + 1);
         const symbol: string = codeSelect(contents, offset);
-        return new Promise<SymbolLocator>(resolve => {
+        return new Promise<SymbolLocator[]>(resolve => {
             if (symbol === '') {
                 resolve(undefined);
             }
             // @ts-ignore
             ctags.findTags(path.resolve(rootPath, this.tagFileName), symbol, (error, tags) => {
-                if (tags.length > 0) {
-                    const tag = this.findClosestTag(tags, path.relative(rootPath, fileName), params.position.line + 1);
+                if (tags.length === 0) {
+                    resolve([]);
+                }
+                let result: SymbolLocator[] = [];
+                // @ts-ignore
+                tags.forEach(tag => {
                     const destURI = pathToFileURL(path.resolve(rootPath, tag.file));
-                    resolve({
+                    result.push({
                         location: Location.create(destURI.toString(), Range.create(Position.create(tag.lineNumber - 1, 0), Position.create(tag.lineNumber - 1, 0)))
                     });
-                }
-                resolve(undefined);
+                });
+                resolve(result);
             });
         });
     }
