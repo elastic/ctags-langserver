@@ -15,7 +15,7 @@ export interface IServerOptions {
 export function createLspConnection(options: IServerOptions): lsp.IConnection {
     let connection: lsp.IConnection;
     if (options.socketPort !== undefined) {
-        const [reader, writer] = createServerSocketTransport(this.port);
+        const [reader, writer] = createServerSocketTransport(options.socketPort);
         connection = lsp.createConnection(reader, writer);
     } else {
         connection = lsp.createConnection();
