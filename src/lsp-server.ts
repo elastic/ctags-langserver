@@ -20,6 +20,34 @@ export interface IServerOptions {
     ctagsPath?: string;
 }
 
+const CTAGS_SUPPORT_LANGS = [
+    'C',
+    'C++',
+    'Clojure',
+    'C#',
+    'CSS',
+    'Go',
+    'HTML',
+    'Iniconf',
+    'Lua',
+    'JSON',
+    'ObjectiveC',
+    'Pascal',
+    'Perl',
+    'PHP',
+    'Python',
+    'R',
+    'Ruby',
+    'Rust',
+    'Scheme',
+    'Sh',
+    'SQL',
+    'Tcl',
+    'TypeScript',
+    'Java',
+    'JavaScript',
+  ];
+
 export class LspServer {
 
     protected initializeParams: InitializeParams;
@@ -307,7 +335,7 @@ export class LspServer {
     private runCtags(rootPath: string) {
         const ctagsPath = this.findCtagsPath();
         try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS -R .`, { cwd: rootPath, stdio: 'pipe' });
+            execSync(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} -R .`, { cwd: rootPath, stdio: 'pipe' });
         } catch (err) {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
             this.logger.error(`${err.stderr}`);
