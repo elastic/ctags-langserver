@@ -55,6 +55,7 @@ export class LspServer {
     private rootPaths: string[] = [];
     protected logger: Logger;
     readonly tagFileName = 'tags';
+    readonly tmpTagName = 'tags.tmp';
 
     constructor(private options: IServerOptions) {
         this.logger = new PrefixingLogger(options.logger, '[lspserver]');
@@ -230,14 +231,14 @@ export class LspServer {
             return [];
         }
         const relativePath = path.relative(rootPath, filePath);
-        const stream = ctags.createReadStream(path.resolve(rootPath, this.tagFileName));
+        this.runCtagsOnSingleFile(rootPath, relativePath);
+        const stream = ctags.createReadStream(path.resolve(rootPath, this.tmpTagName));
         return new Promise<SymbolInformation[]>(resolve => {
             let results: SymbolInformation[] = [];
             // @ts-ignore
             stream.on('data', (tags) => {
                 // @ts-ignore
-                const definitions = tags.filter(tag => path.normalize(tag.file) === path.normalize(relativePath));
-                for (let def of definitions) {
+                for (let def of tags) {
                     let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
                         Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), unitURI, relativePath);
                     if (def.fields !== undefined) {
@@ -344,6 +345,24 @@ export class LspServer {
         try {
             if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
                 this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);
+            }
+        } catch (err) {
+            this.logger.error(err);
+        }
+    }
+
+    private runCtagsOnSingleFile(rootPath: string, filePath: string) {
+        const ctagsPath = this.findCtagsPath();
+        try {
+            execSync(`${ctagsPath} --fields=-anf+iKnS -f ${this.tmpTagName} ${filePath}`, { cwd: rootPath, stdio: 'pipe' });
+        } catch (err) {
+            this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
+            this.logger.error(`${err.stderr}`);
+        }
+
+        try {
+            if (!existsSync(path.resolve(rootPath, this.tmpTagName))) {
+                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tmpTagName)}`);
             }
         } catch (err) {
             this.logger.error(err);
