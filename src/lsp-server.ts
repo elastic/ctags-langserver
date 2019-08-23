@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from '@elastic/node-ctags/ctags';
 // @ts-ignore
 import findRoot from 'find-root';
-import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from './utils';
+import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol, getGitIgnored } from './utils';
 
 export interface IServerOptions {
     logger: Logger;
@@ -334,8 +334,10 @@ export class LspServer {
 
     private runCtags(rootPath: string) {
         const ctagsPath = this.findCtagsPath();
+        const excludeCommands: string = getGitIgnored(rootPath).map(pattern => `--exclude=${pattern}`).join(' ');
         try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} -R .`, { cwd: rootPath, stdio: 'pipe' });
+            console.log(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} ${excludeCommands} -R`);
+            execSync(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} ${excludeCommands} -R`, { cwd: rootPath, stdio: 'pipe' });
         } catch (err) {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
             this.logger.error(`${err.stderr}`);

@@ -31,7 +31,8 @@
 		"line-column": "^1.0.2",
 		"minimatch": "3.0.4",
 		"mz": "^2.7.0",
-		"vscode-languageserver": "^5.2.1"
+		"vscode-languageserver": "^5.2.1",
+		"parse-gitignore": "1.0.1"
 	},
 	"devDependencies": {
 		"@types/commander": "^2.9.2",
