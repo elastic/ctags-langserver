@@ -336,7 +336,6 @@ export class LspServer {
         const ctagsPath = this.findCtagsPath();
         const excludeCommands: string = getGitIgnored(rootPath).map(pattern => `--exclude=${pattern}`).join(' ');
         try {
-            console.log(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} ${excludeCommands} -R`);
             execSync(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} ${excludeCommands} -R`, { cwd: rootPath, stdio: 'pipe' });
         } catch (err) {
             this.logger.error(`Fail to run ctags command with exit code ${err.status}`);

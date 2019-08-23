@@ -151,7 +151,7 @@ interface Match {
 }
 
 export function getGitIgnored(rootPath: string): string[] {
-    if (fs.exists(path.resolve(rootPath, '.gitignore'))) {
+    if (fs.existsSync(path.resolve(rootPath, '.gitignore'))) {
         return parse(fs.readFileSync(path.resolve(rootPath, '.gitignore')));
     } else {
         return [];
