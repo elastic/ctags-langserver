@@ -4,6 +4,8 @@ import minimatch from 'minimatch';
 // @ts-ignore
 import LineColumnFinder from 'line-column';
 import { DocumentSymbol, SymbolInformation } from 'vscode-languageserver';
+// @ts-ignore
+import parse from 'parse-gitignore';
 
 const WORD_CHAR: RegExp = /(\w)/;
 
@@ -146,4 +148,12 @@ interface Match {
     path: string;
     text: string;
     line: number;
+}
+
+export function getGitIgnored(rootPath: string): string[] {
+    if (fs.existsSync(path.resolve(rootPath, '.gitignore'))) {
+        return parse(fs.readFileSync(path.resolve(rootPath, '.gitignore')));
+    } else {
+        return [];
+    }
 }
