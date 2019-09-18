@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import * as ctags from '@elastic/node-ctags/ctags';
 // @ts-ignore
 import findRoot from 'find-root';
-import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol, getGitIgnored } from './utils';
+import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from './utils';
 
 export interface IServerOptions {
     logger: Logger;
@@ -353,7 +353,6 @@ export class LspServer {
             `--languages=${CTAGS_SUPPORT_LANGS.join(',')}`,
             '-R',
         ];
-        params.push(...getGitIgnored(rootPath).map(pattern => `--exclude=${pattern}`));
         const p = spawn(this.findCtagsPath(), params, { cwd: rootPath, stdio: 'pipe' });
         p.stderr.on('data', data => {
             this.logger.error(data.toString());
