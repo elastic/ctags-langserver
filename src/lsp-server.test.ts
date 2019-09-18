@@ -39,11 +39,11 @@ beforeAll(async () => {
     expect(fs.existsSync(path.resolve(rootPath, 'tags'))).toBe(true);
 });
 
-test('test didChangeWorkspaceFolders', () => {
+test('test didChangeWorkspaceFolders', async () => {
     const addedRootPath = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ctags-langserver'));
     const addedSourceFilePath = path.resolve(addedRootPath, 'test.c');
     fs.writeFileSync(addedSourceFilePath, content);
-    lspServer.didChangeWorkspaceFolders({
+    await lspServer.didChangeWorkspaceFolders({
         event: {
             added: [
                 {
