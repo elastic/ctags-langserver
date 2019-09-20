@@ -27,7 +27,6 @@ const CTAGS_SUPPORT_LANGS = [
     'C#',
     'CSS',
     'Go',
-    'Haskell',
     'HTML',
     'Iniconf',
     'Kotlin',
@@ -41,7 +40,6 @@ const CTAGS_SUPPORT_LANGS = [
     'R',
     'Ruby',
     'Rust',
-    'Scala',
     'Scheme',
     'Sh',
     'SQL',
@@ -357,6 +355,8 @@ export class LspServer {
             `--languages=${CTAGS_SUPPORT_LANGS.join(',')}`,
             '-R',
         ];
+        this.addKotlinSupport(params);
+        this.addSwiftSupport(params);
         const p = spawn(this.findCtagsPath(), params, { cwd: rootPath, stdio: 'pipe' });
         p.stderr.on('data', data => {
             this.logger.error(data.toString());
@@ -387,10 +387,9 @@ export class LspServer {
         });
     }
 
-
     // regex borrowed from https://github.com/oracle/opengrok/blob/master/opengrok-indexer/src/main/java/org/opengrok/indexer/analysis/Ctags.java
     private addSwiftSupport(command: string[]) {
-        command.push(
+        command.unshift(
             "--langdef=Swift",
             "--langmap=Swift:+.swift",
             "--regex-Swift=/enum[[:space:]]+([^\\{\\}]+).*$/\\1/n,enum,enums/",
@@ -401,11 +400,10 @@ export class LspServer {
             "--regex-Swift=/(var|let)[[:space:]]+([^:=]+).*$/\\2/v,variable,variables/",
             "--regex-Swift=/^[[:space:]]*extension[[:space:]]+([^:\\{]+).*$/\\1/e,extension,extensions/",
         );
-        return command;
     }
 
     private addKotlinSupport(command: string[]) {
-        command.push(
+        command.unshift(
             "--langdef=Kotlin",
             "--langmap=Kotlin:+.kt",
             "--langmap=Kotlin:+.kts",
@@ -424,44 +422,6 @@ export class LspServer {
             "--regex-Kotlin=/^[[:space:]]*package[[:space:]]+([[:alnum:]_.:]+)/\\1/p,packages/",
             "--regex-Kotlin=/^[[:space:]]*import[[:space:]]+([[:alnum:]_.:]+)/\\1/I,imports/",
         );
-        return command;
-    }
-
-    private addScalaSupport(command: string[]) {
-        command.push(
-            "--langdef=Scala",
-            "--langmap=Scala:+.scala",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private|protected)?[[:space:]]*class[[:space:]]+([a-zA-Z0-9_]+)/\\4/c,classes/",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private|protected)?[[:space:]]*object[[:space:]]+([a-zA-Z0-9_]+)/\\4/o,objects/",
-            // tslint:disable-next-line: max-line-length
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private|protected)?[[:space:]]*case class[[:space:]]+([a-zA-Z0-9_]+)/\\4/C,case classes/",
-            // tslint:disable-next-line: max-line-length
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private|protected)?[[:space:]]*case object[[:space:]]+([a-zA-Z0-9_]+)/\\4/O,case objects/",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private|protected)?[[:space:]]*trait[[:space:]]+([a-zA-Z0-9_]+)/\\4/t,traits/",
-            "--regex-Scala=/^[[:space:]]*type[[:space:]]+([a-zA-Z0-9_]+)/\\1/T,types/",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*def[[:space:]]+([a-zA-Z0-9_]+)/\\3/m,methods/",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*val[[:space:]]+([a-zA-Z0-9_]+)/\\3/l,constants/",
-            "--regex-Scala=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*var[[:space:]]+([a-zA-Z0-9_]+)/\\3/v,variables/",
-            "--regex-Scala=/^[[:space:]]*package[[:space:]]+([a-zA-Z0-9_.]+)/\\1/p,packages/",
-        );
-        return command;
-    }
-
-    private addHaskellSupport(command: string[]) {
-        command.push(
-            "--langdef=Haskell",
-            "--langmap=Haskell:+.hs",
-            "--langmap=Haskell:+.hsc",
-            "--regex-Haskell=/^[[:space:]]*class[[:space:]]+([a-zA-Z0-9_]+)/\\1/c,classes/",
-            "--regex-Haskell=/^[[:space:]]*data[[:space:]]+([a-zA-Z0-9_]+)/\\1/t,types/",
-            "--regex-Haskell=/^[[:space:]]*newtype[[:space:]]+([a-zA-Z0-9_]+)/\\1/t,types/",
-            "--regex-Haskell=/^[[:space:]]*type[[:space:]]+([a-zA-Z0-9_]+)/\\1/t,types/",
-            "--regex-Haskell=/^([a-zA-Z0-9_]+).*[[:space:]]+={1}[[:space:]]+/\\1/f,functions/",
-            "--regex-Haskell=/[[:space:]]+([a-zA-Z0-9_]+).*[[:space:]]+={1}[[:space:]]+/\\1/f,functions/",
-            "--regex-Haskell=/^(let|where)[[:space:]]+([a-zA-Z0-9_]+).*[[:space:]]+={1}[[:space:]]+/\\2/f,functions/",
-            "--regex-Haskell=/[[:space:]]+(let|where)[[:space:]]+([a-zA-Z0-9_]+).*[[:space:]]+={1}[[:space:]]+/\\2/f,functions/",
-        );
-        return command;
     }
 
     protected findCtagsPath(): string {
