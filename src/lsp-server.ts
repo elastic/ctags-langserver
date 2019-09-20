@@ -5,15 +5,15 @@ import { InitializeParams, InitializeResult,
 import { SymbolLocator, FullParams, Full, DetailSymbolInformation } from '@elastic/lsp-extension';
 
 import { Logger, PrefixingLogger } from './logger';
-import { execSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { spawn } from 'child_process';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
 import * as path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 // @ts-ignore
 import * as ctags from '@elastic/node-ctags/ctags';
 // @ts-ignore
 import findRoot from 'find-root';
-import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol, getGitIgnored } from './utils';
+import { getOffsetOfLineAndCharacter, codeSelect, bestIndexOfSymbol, cutLineText, grep, toHierarchicalDocumentSymbol } from './utils';
 
 export interface IServerOptions {
     logger: Logger;
@@ -66,8 +66,12 @@ export class LspServer {
         this.initializeParams = params;
 
         const rootPath = fileURLToPath(params.rootUri!);
-        this.runCtags(rootPath);
-        this.rootPaths.push(rootPath);
+        await this.runCtags(rootPath);
+        if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
+            this.logger.error(`Fail to initialize ${params.rootUri}`);
+        } else {
+            this.rootPaths.push(rootPath);
+        }
 
         this.initializeResult = {
             capabilities: {
@@ -81,14 +85,18 @@ export class LspServer {
         return this.initializeResult;
     }
 
-    didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
+    async didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
         const added = params.event.added;
         const removed = params.event.removed;
-        added.forEach(add => {
+        for (const add of added) {
             const rootPath = fileURLToPath(add.uri);
-            this.runCtags(rootPath);
-            this.rootPaths.push(rootPath);
-        });
+            await this.runCtags(rootPath);
+            if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
+                this.logger.error(`Fail to initialize ${add.uri}`);
+            } else {
+                this.rootPaths.push(rootPath);
+            }
+        }
         removed.forEach(remove => {
             const index = this.rootPaths.indexOf(fileURLToPath(remove.uri));
             if (index !== -1) {
@@ -231,86 +239,91 @@ export class LspServer {
             return [];
         }
         const relativePath = path.relative(rootPath, filePath);
-        this.runCtagsOnSingleFile(rootPath, relativePath);
-        const stream = ctags.createReadStream(path.resolve(rootPath, this.tmpTagName));
-        return new Promise<SymbolInformation[]>(resolve => {
-            let results: SymbolInformation[] = [];
-            // @ts-ignore
-            stream.on('data', (tags) => {
+        await this.runCtagsOnSingleFile(rootPath, relativePath);
+        if (!existsSync(path.resolve(rootPath, this.tmpTagName))) {
+            this.logger.error(`Fail to generate tags for ${unitURI}`);
+            return [];
+        } else {
+            const stream = ctags.createReadStream(path.resolve(rootPath, this.tmpTagName));
+            return new Promise<SymbolInformation[]>(resolve => {
+                let results: SymbolInformation[] = [];
                 // @ts-ignore
-                for (let def of tags) {
-                    let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
-                        Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), unitURI, relativePath);
-                    if (def.fields !== undefined) {
-                        if (def.fields.struct) {
-                            symbolInformation.containerName = def.fields.struct;
-                        } else if (def.fields.class) {
-                            symbolInformation.containerName = def.fields.class;
-                        }  else if (def.fields.interface) {
-                            symbolInformation.containerName = def.fields.interface;
-                        } else if (def.fields.function) {
-                            symbolInformation.containerName = def.fields.function;
-                        } else if (def.fields.enum) {
-                            symbolInformation.containerName = def.fields.enum;
-                        } else if (def.fields.namespace) {
-                            symbolInformation.containerName = def.fields.namespace;
-                        } else if (def.fields.module) {
-                            symbolInformation.containerName = def.fields.module;
+                stream.on('data', (tags) => {
+                    // @ts-ignore
+                    for (let def of tags) {
+                        let symbolInformation = SymbolInformation.create(def.name, SymbolKind.Method,
+                            Range.create(Position.create(def.lineNumber - 1, 0), Position.create(def.lineNumber - 1, 0)), unitURI, relativePath);
+                        if (def.fields !== undefined) {
+                            if (def.fields.struct) {
+                                symbolInformation.containerName = def.fields.struct;
+                            } else if (def.fields.class) {
+                                symbolInformation.containerName = def.fields.class;
+                            }  else if (def.fields.interface) {
+                                symbolInformation.containerName = def.fields.interface;
+                            } else if (def.fields.function) {
+                                symbolInformation.containerName = def.fields.function;
+                            } else if (def.fields.enum) {
+                                symbolInformation.containerName = def.fields.enum;
+                            } else if (def.fields.namespace) {
+                                symbolInformation.containerName = def.fields.namespace;
+                            } else if (def.fields.module) {
+                                symbolInformation.containerName = def.fields.module;
+                            }
                         }
+                        switch (def.kind) {
+                            case 'namespace':
+                                symbolInformation.kind = SymbolKind.Namespace;
+                                break;
+                            case 'package':
+                                symbolInformation.kind = SymbolKind.Package;
+                                break;
+                            case 'module':
+                                symbolInformation.kind = SymbolKind.Module;
+                                break;
+                            case 'variable':
+                                symbolInformation.kind = SymbolKind.Variable;
+                                break;
+                            case 'function':
+                                symbolInformation.kind = SymbolKind.Function;
+                                break;
+                            case 'class':
+                                symbolInformation.kind = SymbolKind.Class;
+                                break;
+                            case 'field':
+                                symbolInformation.kind = SymbolKind.Field;
+                                break;
+                            case 'method':
+                                symbolInformation.kind = SymbolKind.Method;
+                                break;
+                            case 'struct':
+                                symbolInformation.kind = SymbolKind.Struct;
+                                break;
+                            case 'enum':
+                                symbolInformation.kind = SymbolKind.Enum;
+                                break;
+                            case 'enumerator':
+                                symbolInformation.kind = SymbolKind.EnumMember;
+                                break;
+                            case 'member':
+                                symbolInformation.kind = SymbolKind.Field;
+                                break;
+                            case 'typedef':
+                                symbolInformation.kind = SymbolKind.Interface;
+                                break;
+                            case 'macro':
+                                symbolInformation.kind = SymbolKind.Constant;
+                                break;
+                            default:
+                                break;
+                        }
+                        results.push(symbolInformation);
                     }
-                    switch (def.kind) {
-                        case 'namespace':
-                            symbolInformation.kind = SymbolKind.Namespace;
-                            break;
-                        case 'package':
-                            symbolInformation.kind = SymbolKind.Package;
-                            break;
-                        case 'module':
-                            symbolInformation.kind = SymbolKind.Module;
-                            break;
-                        case 'variable':
-                            symbolInformation.kind = SymbolKind.Variable;
-                            break;
-                        case 'function':
-                            symbolInformation.kind = SymbolKind.Function;
-                            break;
-                        case 'class':
-                            symbolInformation.kind = SymbolKind.Class;
-                            break;
-                        case 'field':
-                            symbolInformation.kind = SymbolKind.Field;
-                            break;
-                        case 'method':
-                            symbolInformation.kind = SymbolKind.Method;
-                            break;
-                        case 'struct':
-                            symbolInformation.kind = SymbolKind.Struct;
-                            break;
-                        case 'enum':
-                            symbolInformation.kind = SymbolKind.Enum;
-                            break;
-                        case 'enumerator':
-                            symbolInformation.kind = SymbolKind.EnumMember;
-                            break;
-                        case 'member':
-                            symbolInformation.kind = SymbolKind.Field;
-                            break;
-                        case 'typedef':
-                            symbolInformation.kind = SymbolKind.Interface;
-                            break;
-                        case 'macro':
-                            symbolInformation.kind = SymbolKind.Constant;
-                            break;
-                        default:
-                            break;
-                    }
-                    results.push(symbolInformation);
-                }
+                });
+                stream.on('end', () => {
+                    resolve(results);
+                });
             });
-            stream.on('end', () => {
-                resolve(results);
-            });
-        });
+        }
     }
 
     private findClosestTag(tags: any[], fileName: string, line: number) {
@@ -333,41 +346,41 @@ export class LspServer {
         return tags[0];
     }
 
-    private runCtags(rootPath: string) {
-        const ctagsPath = this.findCtagsPath();
-        const excludeCommands: string = getGitIgnored(rootPath).map(pattern => `--exclude=${pattern}`).join(' ');
-        try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS --languages=${CTAGS_SUPPORT_LANGS.join(',')} ${excludeCommands} -R`, { cwd: rootPath, stdio: 'pipe' });
-        } catch (err) {
-            this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
-            this.logger.error(`${err.stderr}`);
-        }
-
-        try {
-            if (!existsSync(path.resolve(rootPath, this.tagFileName))) {
-                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tagFileName)}`);
-            }
-        } catch (err) {
-            this.logger.error(err);
-        }
+    private async runCtags(rootPath: string) {
+        const params: string[] = [
+            '--links=no',
+            '--fields=-anf+iKnS',
+            `--languages=${CTAGS_SUPPORT_LANGS.join(',')}`,
+            '-R',
+        ];
+        const p = spawn(this.findCtagsPath(), params, { cwd: rootPath, stdio: 'pipe' });
+        p.stderr.on('data', data => {
+            this.logger.error(data.toString());
+        });
+        return new Promise((resolve) => {
+            p.on('exit', () => resolve());
+        });
     }
 
     private runCtagsOnSingleFile(rootPath: string, filePath: string) {
-        const ctagsPath = this.findCtagsPath();
-        try {
-            execSync(`${ctagsPath} --fields=-anf+iKnS -f ${this.tmpTagName} ${filePath}`, { cwd: rootPath, stdio: 'pipe' });
-        } catch (err) {
-            this.logger.error(`Fail to run ctags command with exit code ${err.status}`);
-            this.logger.error(`${err.stderr}`);
+        const tmpTagsFile = path.resolve(rootPath, this.tmpTagName);
+        if (existsSync(tmpTagsFile)) {
+            unlinkSync(tmpTagsFile);
         }
-
-        try {
-            if (!existsSync(path.resolve(rootPath, this.tmpTagName))) {
-                this.logger.error(`Cannot find tag file in ${path.resolve(rootPath, this.tmpTagName)}`);
-            }
-        } catch (err) {
-            this.logger.error(err);
-        }
+        const params: string[] = [
+            '--links=no',
+            '--fields=-anf+iKnS',
+            '-f',
+            this.tmpTagName,
+            filePath,
+        ];
+        const p = spawn(this.findCtagsPath(), params, { cwd: rootPath, stdio: 'pipe' });
+        p.stderr.on('data', data => {
+            this.logger.error(data.toString());
+        });
+        return new Promise((resolve) => {
+            p.on('exit', () => resolve());
+        });
     }
 
     protected findCtagsPath(): string {
