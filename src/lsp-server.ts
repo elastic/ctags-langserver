@@ -29,6 +29,7 @@ const CTAGS_SUPPORT_LANGS = [
     'Go',
     'HTML',
     'Iniconf',
+    'Kotlin',
     'Lua',
     'JSON',
     'ObjectiveC',
@@ -42,6 +43,7 @@ const CTAGS_SUPPORT_LANGS = [
     'Scheme',
     'Sh',
     'SQL',
+    'Swift',
     'Tcl',
     'TypeScript',
     'Java',
@@ -353,6 +355,8 @@ export class LspServer {
             `--languages=${CTAGS_SUPPORT_LANGS.join(',')}`,
             '-R',
         ];
+        this.addKotlinSupport(params);
+        this.addSwiftSupport(params);
         const p = spawn(this.findCtagsPath(), params, { cwd: rootPath, stdio: 'pipe' });
         p.stderr.on('data', data => {
             this.logger.error(data.toString());
@@ -381,6 +385,43 @@ export class LspServer {
         return new Promise((resolve) => {
             p.on('exit', () => resolve());
         });
+    }
+
+    // regex borrowed from https://github.com/oracle/opengrok/blob/master/opengrok-indexer/src/main/java/org/opengrok/indexer/analysis/Ctags.java
+    private addSwiftSupport(command: string[]) {
+        command.unshift(
+            "--langdef=Swift",
+            "--langmap=Swift:+.swift",
+            "--regex-Swift=/enum[[:space:]]+([^\\{\\}]+).*$/\\1/n,enum,enums/",
+            "--regex-Swift=/typealias[[:space:]]+([^:=]+).*$/\\1/t,typealias,typealiases/",
+            "--regex-Swift=/struct[[:space:]]+([^:\\{]+).*$/\\1/s,struct,structs/",
+            "--regex-Swift=/class[[:space:]]+([^:\\{]+).*$/\\1/c,class,classes/",
+            "--regex-Swift=/func[[:space:]]+([^\\(\\)]+)\\([^\\(\\)]*\\)/\\1/f,function,functions/",
+            "--regex-Swift=/(var|let)[[:space:]]+([^:=]+).*$/\\2/v,variable,variables/",
+            "--regex-Swift=/^[[:space:]]*extension[[:space:]]+([^:\\{]+).*$/\\1/e,extension,extensions/",
+        );
+    }
+
+    private addKotlinSupport(command: string[]) {
+        command.unshift(
+            "--langdef=Kotlin",
+            "--langmap=Kotlin:+.kt",
+            "--langmap=Kotlin:+.kts",
+            // tslint:disable-next-line: max-line-length
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private[^ ]*|protected)?[[:space:]]*class[[:space:]]+([[:alnum:]_:]+)/\\4/c,classes/",
+            // tslint:disable-next-line: max-line-length
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private[^ ]*|protected)?[[:space:]]*object[[:space:]]+([[:alnum:]_:]+)/\\4/o,objects/",
+            // tslint:disable-next-line: max-line-length
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private[^ ]*|protected)?[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*data class[[:space:]]+([[:alnum:]_:]+)/\\6/d,data classes/",
+            // tslint:disable-next-line: max-line-length
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy)[[:space:]]*)*(private[^ ]*|protected)?[[:space:]]*interface[[:space:]]+([[:alnum:]_:]+)/\\4/i,interfaces/",
+            "--regex-Kotlin=/^[[:space:]]*type[[:space:]]+([[:alnum:]_:]+)/\\1/T,types/",
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy|private[^ ]*(\\[[a-z]*\\])*|protected)[[:space:]]*)*fun[[:space:]]+([[:alnum:]_:]+)/\\4/m,methods/",
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy|private[^ ]*|protected)[[:space:]]*)*val[[:space:]]+([[:alnum:]_:]+)/\\3/C,constants/",
+            "--regex-Kotlin=/^[[:space:]]*((abstract|final|sealed|implicit|lazy|private[^ ]*|protected)[[:space:]]*)*var[[:space:]]+([[:alnum:]_:]+)/\\3/v,variables/",
+            "--regex-Kotlin=/^[[:space:]]*package[[:space:]]+([[:alnum:]_.:]+)/\\1/p,packages/",
+            "--regex-Kotlin=/^[[:space:]]*import[[:space:]]+([[:alnum:]_.:]+)/\\1/I,imports/",
+        );
     }
 
     protected findCtagsPath(): string {
