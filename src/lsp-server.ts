@@ -367,6 +367,10 @@ export class LspServer {
     }
 
     private runCtagsOnSingleFile(rootPath: string, filePath: string) {
+        if (filePath.trim().startsWith('-')) {
+            this.logger.error(`Invalid file name: ${filePath}`);
+            return;
+        }
         const tmpTagsFile = path.resolve(rootPath, this.tmpTagName);
         if (existsSync(tmpTagsFile)) {
             unlinkSync(tmpTagsFile);
