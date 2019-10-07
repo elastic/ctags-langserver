@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-CTAGS_VERSION=0.1.1
+CTAGS_VERSION=0.1.2
 
 BINARY_HOST_MIRROR="https://github.com/elastic/ctags/releases/download/v${CTAGS_VERSION}/"
 
