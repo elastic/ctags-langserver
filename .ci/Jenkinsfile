@@ -1,0 +1,122 @@
+#!/usr/bin/env groovy
+
+@Library('apm@current') _
+
+pipeline {
+  agent { label 'linux && immutable' }
+  environment {
+    REPO = 'ctags-langserver'
+    BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    YARN_GPG = 'no'
+  }
+  options {
+    timeout(time: 1, unit: 'HOURS')
+    buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '20'))
+    timestamps()
+    ansiColor('xterm')
+    disableResume()
+    durabilityHint('PERFORMANCE_OPTIMIZED')
+  }
+  parameters {
+    booleanParam(name: 'publish_to_npm', defaultValue: false, description: 'Publish to NPM.')
+  }
+  triggers {
+    issueCommentTrigger('(?i).*jenkins\\W+run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
+  }
+  stages {
+    stage('Checkout') {
+      options { skipDefaultCheckout() }
+      steps {
+        deleteDir()
+        gitCheckout(basedir: "${BASE_DIR}", githubNotifyFirstTimeContributor: true)
+        stash allowEmpty: true, name: 'source', useDefaultExcludes: false
+      }
+    }
+    stage('Static Analisis') {
+      options { skipDefaultCheckout() }
+      environment {
+        HOME = "${env.WORKSPACE}"
+      }
+      steps {
+        withGithubNotify(context: 'Lint') {
+          deleteDir()
+          unstash 'source'
+          dir("${BASE_DIR}") {
+            script {
+              docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
+                env.HOME = "${WORKSPACE}"
+                sh(label: 'Build NodeJS', script: 'cd /app && yarn install')
+                sh(label: 'Lint', script: 'cd /app && yarn lint')
+              }
+            }
+          }
+          stash allowEmpty: true, name: 'compiledSource', useDefaultExcludes: false
+        }
+      }
+    }
+    stage('Build') {
+      parallel {
+        stage('OSX') {
+          agent { label 'macosx' }
+          options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}"
+          }
+          steps {
+            withGithubNotify(context: 'OSX tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}"){
+                script {
+                  docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
+                    env.HOME = "${WORKSPACE}"
+                    env.JEST_JUNIT_OUTPUT_NAME = "TEST-unit-osx.xml"
+                    sh(label: 'Yarn Install', script: 'cd /app && yarn install')
+                    sh(label: 'Yarn Build', script: 'cd /app && yarn test:ci')
+                  }
+                }
+              }
+            }
+          }
+          post {
+            always {
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}.xml")
+            }
+          }
+        }
+        stage('Linux') {
+          options { skipDefaultCheckout() }
+          environment {
+            HOME = "${env.WORKSPACE}"
+          }
+          steps {
+            withGithubNotify(context: 'Linux tests') {
+              deleteDir()
+              unstash 'source'
+              dir("${BASE_DIR}") {
+                script {
+                  docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
+                    env.HOME = "${WORKSPACE}"
+                    env.JEST_JUNIT_OUTPUT_NAME = "TEST-unit-linux.xml"
+                    sh(label: 'Yarn Install', script: 'cd /app && yarn install')
+                    sh(label: 'Yarn Build', script: 'cd /app && yarn test:ci')
+                  }
+                }
+              }
+            }
+          }
+          post {
+            always {
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}.xml")
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    cleanup {
+      notifyBuildResult()
+    }
+  }
+}
