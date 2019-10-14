@@ -18,7 +18,7 @@ pipeline {
     durabilityHint('PERFORMANCE_OPTIMIZED')
   }
   parameters {
-    booleanParam(name: 'publish_to_npm', defaultValue: false, description: 'Publish to NPM.')
+    booleanParam(name: 'PUBLISH_TO_NPM', defaultValue: false, description: 'Publish to NPM.')
   }
   triggers {
     issueCommentTrigger('(?i).*jenkins\\W+run\\W+(?:the\\W+)?tests(?:\\W+please)?.*')
@@ -108,6 +108,30 @@ pipeline {
           post {
             always {
               junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}.xml")
+            }
+          }
+        }
+      }
+    }
+    stage('Publish to NPM') {
+      options { skipDefaultCheckout() }
+      when {
+        beforeAgent true
+        allOf {
+          tag pattern: 'v\\d+.*', comparator: 'REGEXP'
+          expression { return params.PUBLISH_TO_NPM }
+        }
+      }
+      steps {
+        withGithubNotify(context: 'Publish to NPM') {
+          deleteDir()
+          unstash 'compiledSource'
+          dir("${BASE_DIR}") {
+            script {
+              docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
+                env.HOME = "${WORKSPACE}"
+                sh(label: 'Lint', script: 'cd /app && yarn pub')
+              }
             }
           }
         }
