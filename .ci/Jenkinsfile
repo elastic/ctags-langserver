@@ -44,8 +44,8 @@ pipeline {
           script {
             docker.image("node:10").inside(){
               dir("${BASE_DIR}"){
-                sh(label: 'Build NodeJS', script: 'cd /app && yarn install')
-                sh(label: 'Lint', script: 'cd /app && yarn lint')
+                sh(label: 'Build NodeJS', script: 'yarn install')
+                sh(label: 'Lint', script: 'yarn lint')
               }
             }
           }
