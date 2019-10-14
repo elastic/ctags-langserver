@@ -41,10 +41,9 @@ pipeline {
         withGithubNotify(context: 'Lint') {
           deleteDir()
           unstash 'source'
-          dir("${BASE_DIR}") {
-            script {
-              docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
-                env.HOME = "${WORKSPACE}"
+          script {
+            docker.image("node:10").inside(){
+              dir("${BASE_DIR}"){
                 sh(label: 'Build NodeJS', script: 'cd /app && yarn install')
                 sh(label: 'Lint', script: 'cd /app && yarn lint')
               }
@@ -124,11 +123,10 @@ pipeline {
         withGithubNotify(context: 'Publish to NPM') {
           deleteDir()
           unstash 'compiledSource'
-          dir("${BASE_DIR}") {
-            script {
-              docker.image("node:10").inside("-v ${WORKSPACE}/${BASE_DIR}:/app"){
-                env.HOME = "${WORKSPACE}"
-                sh(label: 'Lint', script: 'cd /app && yarn pub')
+          script {
+            docker.image("node:10").inside(){
+              dir("${BASE_DIR}") {
+                sh(label: 'Lint', script: 'yarn pub')
               }
             }
           }
