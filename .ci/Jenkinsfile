@@ -78,7 +78,7 @@ pipeline {
           }
           post {
             always {
-              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}.xml")
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}")
             }
           }
         }
@@ -104,7 +104,7 @@ pipeline {
           }
           post {
             always {
-              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}.xml")
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}")
             }
           }
         }
