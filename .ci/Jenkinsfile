@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'ctags-langserver'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    NODE_VERSION="10"
     YARN_GPG = 'no'
   }
   options {
@@ -42,7 +43,7 @@ pipeline {
           deleteDir()
           unstash 'source'
           script {
-            docker.image("node:10").inside(){
+            docker.image("node:${NODE_VERSION}-alpine").inside(){
               dir("${BASE_DIR}"){
                 sh(label: 'Build NodeJS', script: 'yarn install')
                 sh(label: 'Lint', script: 'yarn lint')
@@ -67,7 +68,7 @@ pipeline {
               deleteDir()
               unstash 'source'
               script {
-                docker.image("node:10").inside(){
+                docker.image("node:${NODE_VERSION}-alpine").inside(){
                   dir("${BASE_DIR}"){
                     sh(label: 'Yarn Install', script: 'yarn install')
                     sh(label: 'Yarn Build', script: 'yarn test:ci')
@@ -91,15 +92,40 @@ pipeline {
           steps {
             withGithubNotify(context: 'Linux tests') {
               deleteDir()
-              unstash 'source'
+              unstash 'compiledSource'
               script {
-                docker.image("node:10").inside(){
+                docker.image("node:${NODE_VERSION}-alpine").inside(){
                   dir("${BASE_DIR}"){
-                    sh(label: 'Yarn Install', script: 'yarn install')
                     sh(label: 'Yarn Build', script: 'yarn test:ci')
                   }
                 }
               }
+            }
+          }
+          post {
+            always {
+              junit(allowEmptyResults: true, keepLongStdio: true, testResults: "**/${JEST_JUNIT_OUTPUT_NAME}")
+            }
+          }
+        }
+        stage('Windows') {
+          agent { label 'windows-2019-immutable' }
+          options { skipDefaultCheckout() }
+          environment {
+            PATH="${PATH};C:\\Program Files\\nodejs"
+            JEST_JUNIT_OUTPUT_NAME="TEST-unit-windows.xml"
+          }
+          steps {
+            deleteDir()
+            unstash 'source'
+            dir(BASE_DIR) {
+              powershell label: 'Install tools', script: ".\\.ci\\scripts\\windows\\install-node.ps1"
+              bat label: 'Tool versions', script: '''
+                npm --version
+                node --version
+              '''
+              bat label: 'NPM Install', script: 'npm install'
+              bat label: 'NPM Tests', script: 'npm run test:ci'
             }
           }
           post {
