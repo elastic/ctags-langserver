@@ -125,7 +125,7 @@ pipeline {
                 node --version
               '''
               bat label: 'NPM Install', script: 'npm install'
-              bat label: 'NPM Tests', script: 'npm run test:ci'
+              bat label: 'NPM Tests', script: 'npm run test:ci:windows'
             }
           }
           post {
