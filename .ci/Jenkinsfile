@@ -43,7 +43,7 @@ pipeline {
           deleteDir()
           unstash 'source'
           script {
-            docker.image("node:${NODE_VERSION}-alpine").inside(){
+            docker.image("node:${NODE_VERSION}").inside(){
               dir("${BASE_DIR}"){
                 sh(label: 'Build NodeJS', script: 'yarn install')
                 sh(label: 'Lint', script: 'yarn lint')
@@ -68,7 +68,7 @@ pipeline {
               deleteDir()
               unstash 'source'
               script {
-                docker.image("node:${NODE_VERSION}-alpine").inside(){
+                docker.image("node:${NODE_VERSION}").inside(){
                   dir("${BASE_DIR}"){
                     sh(label: 'Yarn Install', script: 'yarn install')
                     sh(label: 'Yarn Build', script: 'yarn test:ci')
@@ -94,7 +94,7 @@ pipeline {
               deleteDir()
               unstash 'compiledSource'
               script {
-                docker.image("node:${NODE_VERSION}-alpine").inside(){
+                docker.image("node:${NODE_VERSION}").inside(){
                   dir("${BASE_DIR}"){
                     sh(label: 'Yarn Build', script: 'yarn test:ci')
                   }
