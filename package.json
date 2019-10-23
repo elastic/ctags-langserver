@@ -19,6 +19,8 @@
 		"compile": "tsc -b tsconfig.json",
 		"tslint": "tslint -c tslint.json -p .",
 		"test": "jest",
+		"test:ci": "JEST_JUNIT_OUTPUT_DIR=test-results jest --ci --reporters=default --reporters='jest-junit'",
+		"test:ci:windows": "set JEST_JUNIT_OUTPUT_DIR=test-results && jest --ci --reporters=default --reporters='jest-junit'",
 		"clean": "rimraf lib",
 		"lint": "tslint -c ./tslint.json --project .",
 		"pub": "yarn clean && yarn build && yarn publish --access=public"
@@ -41,6 +43,7 @@
 		"@types/mz": "0.0.32",
 		"@types/node": "^12.0.4",
 		"jest": "^24.9.0",
+		"jest-junit": "^8.0.0",
 		"ts-jest": "^24.0.2",
 		"ts-node": "7.0.1",
 		"tslint": "^5.16.0",
