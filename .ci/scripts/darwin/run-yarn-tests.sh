@@ -13,8 +13,6 @@ function install_nvm() {
 
 function install_node() {
     nvm install ${NODE_VERSION}
-
-    nvm use --delete-prefix ${NODE_VERSION}
 }
 
 function install_yarn() {
@@ -37,9 +35,13 @@ function main() {
         install_node
     fi
 
+    nvm use --delete-prefix ${NODE_VERSION}
+
     if ! [ -x "$(command -v yarn)" ]; then
         install_yarn
     fi
+
+    run_tests
 }
 
 main "$@"
