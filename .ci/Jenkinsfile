@@ -62,14 +62,16 @@ pipeline {
           environment {
             HOME = "${env.WORKSPACE}"
             JEST_JUNIT_OUTPUT_NAME="TEST-unit-osx.xml"
+            PATH="${HOME}/.yarn/bin:${HOME}/.config/yarn/global/node_modules/.bin:${PATH}"
+            NODE_VERSION="10.17.0"
+            NVM_DIR="${HOME}/.nvm"
           }
           steps {
             withGithubNotify(context: 'OSX tests') {
               deleteDir()
               unstash 'source'
               dir("${BASE_DIR}"){
-                sh(label: 'Yarn Install', script: 'yarn install')
-                sh(label: 'Yarn Build', script: 'yarn test:ci')
+                sh(label: 'Yarn Tests', script: ".ci/scripts/darwin/run-yarn-tests.sh ${NODE_VERSION}")
               }
             }
           }
