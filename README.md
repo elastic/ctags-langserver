@@ -1,6 +1,7 @@
 # ctags-langserver
 
 [![Build Status](https://travis-ci.org/elastic/ctags-langserver.svg?branch=master)](https://travis-ci.org/elastic/ctags-langserver) [![Build Status](https://ci.appveyor.com/api/projects/status/github/elastic/ctags-langserver?branch=master&svg=true)]()
+[![Build Status](https://apm-ci.elastic.co/buildStatus/icon?job=code%2Fcode-ctags-langserver%2Fmaster)](https://apm-ci.elastic.co/job/code/job/code-ctags-langserver/job/master/)
 
 # Supported Protocol features
 
