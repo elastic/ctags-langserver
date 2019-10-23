@@ -67,13 +67,9 @@ pipeline {
             withGithubNotify(context: 'OSX tests') {
               deleteDir()
               unstash 'source'
-              script {
-                docker.image("node:${NODE_VERSION}").inside(){
-                  dir("${BASE_DIR}"){
-                    sh(label: 'Yarn Install', script: 'yarn install')
-                    sh(label: 'Yarn Build', script: 'yarn test:ci')
-                  }
-                }
+              dir("${BASE_DIR}"){
+                sh(label: 'Yarn Install', script: 'yarn install')
+                sh(label: 'Yarn Build', script: 'yarn test:ci')
               }
             }
           }
