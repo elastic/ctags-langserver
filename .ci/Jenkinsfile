@@ -7,6 +7,7 @@ pipeline {
   environment {
     REPO = 'ctags-langserver'
     BASE_DIR = "src/github.com/elastic/${env.REPO}"
+    JEST_JUNIT_OUTPUT_DIR="test-results"
     NODE_VERSION="10"
     YARN_GPG = 'no'
   }
