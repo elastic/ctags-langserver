@@ -1,5 +1,7 @@
 # ctags-langserver
 
+[![Build Status](https://apm-ci.elastic.co/buildStatus/icon?job=code%2Fcode-ctags-langserver%2Fmaster)](https://apm-ci.elastic.co/job/code/job/code-ctags-langserver/job/master/)
+
 # Supported Protocol features
 
 - [x] textDocument/edefinition (extension)
